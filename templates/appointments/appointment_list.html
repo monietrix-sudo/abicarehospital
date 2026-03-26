@@ -1,0 +1,131 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Appointments</h1>
+    <div class="breadcrumb-abi"><a href="{% url 'patients:dashboard' %}">Dashboard</a> › Appointments</div>
+  </div>
+  {% if user.role != 'patient' %}
+  <a href="{% url 'appointments:book' %}" class="btn-abi-primary">
+    <i class="fas fa-calendar-plus"></i> Book Appointment
+  </a>
+  {% endif %}
+</div>
+
+<!-- Filters -->
+<div class="card-abi mb-4">
+  <div class="card-body-abi">
+    <form method="get" class="form-abi">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-3">
+          <label class="form-label">Date</label>
+          <input type="date" name="date" value="{{ date_filter }}" class="form-control" />
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label">Type</label>
+          <select name="type" class="form-select">
+            <option value="">All Types</option>
+            {% for val, label in type_choices %}
+            <option value="{{ val }}" {% if type_filter == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-3">
+          <div style="display:flex;gap:8px;">
+            <button type="submit" class="btn-abi-primary" style="flex:1;"><i class="fas fa-filter"></i> Filter</button>
+            <a href="{% url 'appointments:list' %}" class="btn-abi-outline">Clear</a>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card-abi">
+  <div class="card-body-abi" style="padding:0;">
+    {% if page_obj.object_list %}
+    <div style="overflow-x:auto;">
+      <table class="table-abi">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Date & Time</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Teleconsult</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for appt in page_obj %}
+          <tr>
+            <td>
+              <div style="font-weight:600;font-size:14px;">{{ appt.patient.full_name }}</div>
+              <div style="font-size:11px;color:var(--text-muted);">{{ appt.patient.hospital_number }}</div>
+            </td>
+            <td style="font-size:14px;">Dr. {{ appt.doctor.get_full_name|default:"—" }}</td>
+            <td>
+              <div style="font-weight:600;font-size:14px;">{{ appt.appointment_date|date:"M d, Y" }}</div>
+              <div style="font-size:12px;color:var(--text-muted);">{{ appt.appointment_time|time:"g:i A" }}</div>
+            </td>
+            <td>
+              <span class="badge-abi {% if appt.appointment_type == 'teleconsult' %}badge-accent{% else %}badge-primary{% endif %}">
+                {{ appt.get_appointment_type_display }}
+              </span>
+            </td>
+            <td>
+              <span class="badge-abi
+                {% if appt.status == 'confirmed' or appt.status == 'completed' %}badge-success
+                {% elif appt.status == 'cancelled' or appt.status == 'no_show' %}badge-danger
+                {% elif appt.status == 'in_progress' %}badge-warning
+                {% else %}badge-primary{% endif %}">
+                {{ appt.get_status_display }}
+              </span>
+            </td>
+            <td>
+              {% if appt.appointment_type == 'teleconsult' %}
+                {% if appt.teleconsult_approved %}
+                  <span style="color:var(--success);font-size:13px;font-weight:600;"><i class="fas fa-check-circle"></i> Approved</span>
+                {% else %}
+                  <span style="color:var(--text-muted);font-size:13px;"><i class="fas fa-clock"></i> Pending</span>
+                {% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <a href="{% url 'appointments:detail' appt.pk %}" class="btn-abi-primary" style="padding:6px 14px;font-size:12px;">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="padding:16px 22px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--text-muted);">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <div style="display:flex;gap:6px;">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn-abi-outline" style="padding:6px 14px;font-size:13px;"><i class="fas fa-chevron-left"></i> Prev</a>{% endif %}
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn-abi-primary" style="padding:6px 14px;font-size:13px;">Next <i class="fas fa-chevron-right"></i></a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div style="padding:60px;text-align:center;color:var(--text-muted);">
+      <i class="fas fa-calendar-times" style="font-size:48px;opacity:0.2;display:block;margin-bottom:16px;"></i>
+      <div style="font-size:18px;font-weight:600;margin-bottom:8px;">No appointments found</div>
+      <a href="{% url 'appointments:book' %}" class="btn-abi-primary" style="display:inline-flex;margin-top:12px;"><i class="fas fa-plus"></i> Book Appointment</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

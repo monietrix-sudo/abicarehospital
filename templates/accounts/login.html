@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<!--
+  AbiCare Hospital EHR — Login Page
+  Standalone (does NOT extend base.html since sidebar is not needed).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Staff Login — {{ HOSPITAL_NAME }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #0A5C8A;
+      --primary-dark: #074266;
+      --accent: #00C49A;
+      --font-display: 'Playfair Display', serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-body); }
+
+    body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── LEFT PANEL — visual brand ─────────────────────────────── */
+    .login-panel-left {
+      background: linear-gradient(155deg, var(--primary-dark) 0%, var(--primary) 55%, #1A7CB8 100%);
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      padding: 48px;
+      position: relative; overflow: hidden;
+    }
+
+    /* Abstract decorative circles */
+    .login-panel-left::before {
+      content: '';
+      position: absolute; right: -80px; top: -80px;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+    .login-panel-left::after {
+      content: '';
+      position: absolute; left: -60px; bottom: -60px;
+      width: 260px; height: 260px;
+      border-radius: 50%;
+      background: rgba(0,196,154,0.12);
+    }
+
+    .left-brand { position: relative; z-index: 1; }
+    .left-brand-icon {
+      width: 56px; height: 56px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 16px; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 26px; color: #fff;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .left-brand h1 {
+      font-family: var(--font-display);
+      font-size: 32px; color: #fff; font-weight: 700;
+      line-height: 1.2; margin-bottom: 8px;
+    }
+    .left-brand p {
+      color: rgba(255,255,255,0.65);
+      font-size: 15px; line-height: 1.6;
+      max-width: 340px;
+    }
+
+    /* Features list */
+    .left-features { position: relative; z-index: 1; }
+    .feature-item {
+      display: flex; align-items: flex-start; gap: 14px;
+      margin-bottom: 20px;
+    }
+    .feature-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: rgba(255,255,255,0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: var(--accent); flex-shrink: 0;
+    }
+    .feature-text strong { display: block; color: #fff; font-size: 14px; font-weight: 600; }
+    .feature-text span   { color: rgba(255,255,255,0.55); font-size: 12px; }
+
+    .left-footer {
+      position: relative; z-index: 1;
+      font-size: 12px; color: rgba(255,255,255,0.35);
+    }
+
+    /* ── RIGHT PANEL — login form ──────────────────────────────── */
+    .login-panel-right {
+      background: #F7FAFC;
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px;
+    }
+    .login-form-wrapper {
+      width: 100%; max-width: 420px;
+    }
+    .login-form-header { margin-bottom: 36px; }
+    .login-form-header h2 {
+      font-family: var(--font-display);
+      font-size: 28px; font-weight: 700;
+      color: #1A202C; margin-bottom: 6px;
+    }
+    .login-form-header p {
+      color: #718096; font-size: 14px;
+    }
+
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block; font-size: 13px; font-weight: 600;
+      color: #2D3748; margin-bottom: 6px;
+    }
+    .form-input-wrap { position: relative; }
+    .form-input-wrap .input-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: #A0AEC0; font-size: 15px;
+    }
+    .form-input {
+      width: 100%; height: 48px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 0 14px 0 42px;
+      font-size: 15px; font-family: var(--font-body);
+      background: #fff; color: #1A202C;
+      transition: all 0.2s; outline: none;
+    }
+    .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(10,92,138,0.1);
+    }
+
+    /* Show/hide password toggle */
+    .pw-toggle {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: #A0AEC0; font-size: 15px; padding: 0;
+    }
+    .pw-toggle:hover { color: var(--primary); }
+
+    .btn-login {
+      width: 100%; height: 50px;
+      background: var(--primary);
+      color: #fff; border: none; border-radius: 10px;
+      font-size: 16px; font-weight: 700; font-family: var(--font-body);
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-top: 8px;
+    }
+    .btn-login:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(10,92,138,0.3);
+    }
+    .btn-login:active { transform: translateY(0); }
+
+    /* Alert messages */
+    .msg-list { margin-bottom: 20px; }
+    .msg-item {
+      padding: 12px 14px; border-radius: 8px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 14px; margin-bottom: 8px;
+    }
+    .msg-error   { background: #FFF5F5; border: 1px solid #FED7D7; color: #9B2C2C; }
+    .msg-success { background: #F0FFF4; border: 1px solid #C6F6D5; color: #276749; }
+
+    /* Security badge */
+    .security-badge {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: #718096;
+      margin-top: 28px; padding-top: 20px;
+      border-top: 1px solid #E2E8F0;
+    }
+    .security-badge .lock-icon {
+      color: var(--accent); font-size: 14px;
+    }
+
+    /* ── Responsive: stack on mobile ──────────────────────────── */
+    @media (max-width: 768px) {
+      body { grid-template-columns: 1fr; }
+      .login-panel-left { display: none; }
+      .login-panel-right { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LEFT: Brand panel -->
+<div class="login-panel-left">
+  <div class="left-brand">
+    <div class="left-brand-icon"><i class="fas fa-heartbeat"></i></div>
+    <h1>{{ HOSPITAL_NAME }}</h1>
+    <p>{{ HOSPITAL_TAGLINE|default:"Compassionate Care, Advanced Medicine" }}</p>
+  </div>
+
+  <div class="left-features">
+    <div class="feature-item">
+      <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+      <div class="feature-text">
+        <strong>Secure & Compliant</strong>
+        <span>Role-based access control with full audit trail</span>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon"><i class="fas fa-video"></i></div>
+      <div class="feature-text">
+        <strong>Integrated Teleconsult</strong>
+        <span>Zoom & Google Meet with doctor authorization</span>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon"><i class="fas fa-flask"></i></div>
+      <div class="feature-text">
+        <strong>Smart Lab Management</strong>
+        <span>Templated results patients can view in real time</span>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon"><i class="fas fa-pills"></i></div>
+      <div class="feature-text">
+        <strong>Medication Timetables</strong>
+        <span>Auto-generated schedules patients can tick off</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="left-footer">
+    © {{ HOSPITAL_NAME }} · All rights reserved · Secure EHR System
+  </div>
+</div>
+
+<!-- RIGHT: Login form -->
+<div class="login-panel-right">
+  <div class="login-form-wrapper">
+
+    <div class="login-form-header">
+      <h2>Welcome back</h2>
+      <p>Sign in to your {{ HOSPITAL_NAME }} account</p>
+    </div>
+
+    <!-- Django messages -->
+    {% if messages %}
+    <div class="msg-list">
+      {% for message in messages %}
+      <div class="msg-item {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">
+        <i class="fas fa-{% if message.tags == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Login form -->
+    <form method="post" action="{% url 'accounts:login' %}">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <div class="form-input-wrap">
+          <i class="fas fa-user input-icon"></i>
+          <input
+            class="form-input"
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Enter your username"
+            autocomplete="username"
+            required
+            autofocus
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="form-input-wrap">
+          <i class="fas fa-lock input-icon"></i>
+          <input
+            class="form-input"
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+          />
+          <button type="button" class="pw-toggle" id="pwToggle" title="Show/hide password">
+            <i class="fas fa-eye" id="pwIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login">
+        <i class="fas fa-sign-in-alt"></i>
+        Sign In Securely
+      </button>
+    </form>
+              <div style="text-align:center;margin-top:16px;">
+                <a href="/accounts/reset/" style="font-size:13px;color:#718096;text-decoration:none;">
+                  <i class="fas fa-key"></i> Forgot your password?
+                </a>
+              </div>
+
+    <div class="security-badge">
+      <i class="fas fa-lock lock-icon"></i>
+      This is a restricted system. Unauthorized access is prohibited and logged.
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Password show/toggle
+  const pwToggle = document.getElementById('pwToggle');
+  const pwField  = document.getElementById('password');
+  const pwIcon   = document.getElementById('pwIcon');
+  pwToggle.addEventListener('click', () => {
+    const isPassword = pwField.type === 'password';
+    pwField.type = isPassword ? 'text' : 'password';
+    pwIcon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Audit Logs</h1>
+    <div class="breadcrumb-abi"><a href="{% url 'patients:dashboard' %}">Dashboard</a> › Audit Logs</div>
+  </div>
+</div>
+<div class="card-abi mb-4">
+  <div class="card-body-abi">
+    <form method="get" class="form-abi">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Search</label>
+          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Username, IP, description…" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Action Type</label>
+          <select name="action" class="form-select">
+            <option value="">All Actions</option>
+            {% for val, label in action_choices %}
+            <option value="{{ val }}" {% if action_filter == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn-abi-primary"><i class="fas fa-filter"></i> Filter</button>
+          <a href="{% url 'audit_logs:list' %}" class="btn-abi-outline ms-2">Clear</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="card-abi">
+  <div class="card-body-abi" style="padding:0;">
+    {% if page_obj.object_list %}
+    <div style="overflow-x:auto;">
+      <table class="table-abi">
+        <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Description</th><th>IP Address</th><th>Path</th></tr></thead>
+        <tbody>
+          {% for log in page_obj %}
+          <tr>
+            <td style="font-size:12px;white-space:nowrap;color:var(--text-muted);">{{ log.timestamp|date:"M d, Y" }}<br/>{{ log.timestamp|time:"g:i:s A" }}</td>
+            <td style="font-weight:600;font-size:13px;">{{ log.user.username|default:"Anonymous" }}</td>
+            <td>
+              {% with log.action as a %}
+              <span class="badge-abi
+                {% if a == 'LOGIN' or a == 'APPROVE' %}badge-success
+                {% elif a == 'LOGIN_FAIL' or a == 'DELETE' or a == 'REVOKE' %}badge-danger
+                {% elif a == 'CREATE' or a == 'UPLOAD' %}badge-accent
+                {% elif a == 'UPDATE' %}badge-warning
+                {% elif a == 'TELECONSULT' %}badge-primary
+                {% else %}badge-muted{% endif %}">
+                {{ log.get_action_display }}
+              </span>
+              {% endwith %}
+            </td>
+            <td style="font-size:13px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ log.description }}">{{ log.description }}</td>
+            <td style="font-size:12px;font-family:monospace;color:var(--text-muted);">{{ log.ip_address|default:"—" }}</td>
+            <td style="font-size:12px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;">{{ log.url_path }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="padding:16px 22px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--text-muted);">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <div style="display:flex;gap:6px;">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}" class="btn-abi-outline" style="padding:6px 12px;font-size:13px;">Prev</a>{% endif %}
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}" class="btn-abi-primary" style="padding:6px 12px;font-size:13px;">Next</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div style="padding:60px;text-align:center;color:var(--text-muted);">
+      <i class="fas fa-history" style="font-size:48px;opacity:0.2;display:block;margin-bottom:16px;"></i>
+      <div style="font-size:18px;font-weight:600;">No audit logs found</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

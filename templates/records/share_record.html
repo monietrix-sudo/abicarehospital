@@ -1,0 +1,73 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Share Record</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'records:detail' record.pk %}">{{ record.title }}</a> › Share
+    </div>
+  </div>
+  <a href="{% url 'records:detail' record.pk %}" class="btn-abi-outline"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-7">
+
+    <div class="card-abi mb-4" style="border-left:4px solid var(--primary);">
+      <div class="card-body-abi">
+        <div style="font-size:12px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;">Record Being Shared</div>
+        <div style="font-size:18px;font-weight:700;margin-top:4px;">{{ record.title }}</div>
+        <div style="font-size:13px;color:var(--text-muted);">{{ record.get_record_type_display }} · {{ record.patient.full_name }} · {{ record.patient.hospital_number }}</div>
+      </div>
+    </div>
+
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-share-alt" style="color:var(--primary);"></i>
+        <h2>Share with External Hospital</h2>
+      </div>
+      <div class="card-body-abi">
+        <div style="background:#EBF4FF;border:1px solid #BEE3F8;border-left:4px solid #0A5C8A;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#2C5282;">
+          <i class="fas fa-shield-alt"></i>
+          A secure link will be generated that expires automatically. No login is required to view the record via the link. You can revoke access at any time.
+        </div>
+
+        <form method="post" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Receiving Hospital / Doctor Name *</label>
+              <input type="text" name="recipient_name" class="form-control" required
+                     placeholder="e.g. Lagos General Hospital, Dr. Adebayo" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Email Address <span style="font-weight:400;color:var(--text-muted);">(optional — link will be emailed to them)</span></label>
+              <input type="email" name="recipient_email" class="form-control"
+                     placeholder="doctor@otherhospital.com" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Purpose / Reason for Sharing</label>
+              <input type="text" name="purpose" class="form-control"
+                     placeholder="e.g. Referral for specialist review, Second opinion" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Link Expires After</label>
+              <select name="expires_hours" class="form-select">
+                <option value="24">24 hours</option>
+                <option value="48" selected>48 hours (default)</option>
+                <option value="72">72 hours</option>
+                <option value="168">1 week</option>
+              </select>
+            </div>
+            <div class="col-12" style="display:flex;gap:12px;justify-content:flex-end;">
+              <a href="{% url 'records:detail' record.pk %}" class="btn-abi-outline">Cancel</a>
+              <button type="submit" class="btn-abi-primary">
+                <i class="fas fa-share-alt"></i> Generate Share Link
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Medical Records</h1>
+    <div class="breadcrumb-abi"><a href="{% url 'patients:dashboard' %}">Dashboard</a> › Medical Records</div>
+  </div>
+</div>
+<!-- Filter -->
+<div class="card-abi mb-4">
+  <div class="card-body-abi">
+    <form method="get" class="form-abi">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Record Type</label>
+          <select name="record_type" class="form-select">
+            <option value="">All Types</option>
+            {% for val, label in record_types %}
+            <option value="{{ val }}" {% if type_filter == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn-abi-primary"><i class="fas fa-filter"></i> Filter</button>
+          <a href="{% url 'records:list' %}" class="btn-abi-outline ms-2">Clear</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="card-abi">
+  <div class="card-body-abi" style="padding:0;">
+    {% if records %}
+    <table class="table-abi">
+      <thead><tr><th>Record</th><th>Patient</th><th>Type</th><th>File</th><th>Visible</th><th>Uploaded</th><th></th></tr></thead>
+      <tbody>
+        {% for rec in records %}
+        <tr>
+          <td style="font-weight:600;font-size:14px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ rec.title }}</td>
+          <td><a href="{% url 'patient_detail:detail' rec.patient.hospital_number %}" style="color:var(--primary);text-decoration:none;font-weight:600;">{{ rec.patient.full_name }}</a><br/><span style="font-size:11px;color:var(--text-muted);">{{ rec.patient.hospital_number }}</span></td>
+          <td><span class="badge-abi badge-primary">{{ rec.get_record_type_display }}</span></td>
+          <td>{% if rec.file_type %}<span class="badge-abi badge-muted">{{ rec.file_type|title }}</span>{% else %}—{% endif %}</td>
+          <td>{% if rec.is_visible_to_patient %}<span class="badge-abi badge-success">Yes</span>{% else %}<span class="badge-abi badge-muted">No</span>{% endif %}</td>
+          <td style="font-size:13px;color:var(--text-muted);">{{ rec.uploaded_at|date:"M d, Y" }}</td>
+          <td><a href="{% url 'records:detail' rec.pk %}" class="btn-abi-primary" style="padding:6px 14px;font-size:12px;">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="padding:60px;text-align:center;color:var(--text-muted);">
+      <i class="fas fa-file-medical" style="font-size:48px;opacity:0.2;display:block;margin-bottom:16px;"></i>
+      <div style="font-size:18px;font-weight:600;">No medical records found</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

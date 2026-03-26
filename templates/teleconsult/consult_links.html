@@ -1,0 +1,71 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Teleconsult Links</h1>
+    <div class="breadcrumb-abi"><a href="{% url 'patients:dashboard' %}">Dashboard</a> › Teleconsult</div>
+  </div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card-abi">
+      <div class="card-header-abi"><i class="fas fa-plus" style="color:var(--accent);"></i><h2>Save New Link</h2></div>
+      <div class="card-body-abi">
+        <form method="post" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Platform *</label>
+              <select name="platform" class="form-select" required>
+                {% for val, label in platform_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Meeting Link *</label>
+              <input type="url" name="link" class="form-control" required placeholder="https://zoom.us/j/... or https://meet.google.com/..." />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Label</label>
+              <input type="text" name="label" class="form-control" value="Default Room" />
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn-abi-primary" style="width:100%;justify-content:center;"><i class="fas fa-save"></i> Save Link</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card-abi">
+      <div class="card-header-abi"><h2>Saved Links</h2></div>
+      <div class="card-body-abi" style="padding:0;">
+        {% if links %}
+        {% for link in links %}
+        <div style="display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--border);">
+          <div style="width:44px;height:44px;border-radius:10px;background:{% if link.platform == 'zoom' %}rgba(37,90,226,0.1){% elif link.platform == 'meet' %}rgba(0,132,61,0.1){% else %}rgba(10,92,138,0.1){% endif %};display:flex;align-items:center;justify-content:center;font-size:20px;">
+            {% if link.platform == 'zoom' %}🎥{% elif link.platform == 'meet' %}📹{% else %}🔗{% endif %}
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:14px;">{{ link.label }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ link.get_platform_display }} · Dr. {{ link.doctor.get_full_name }}</div>
+            <div style="font-size:11px;color:var(--primary);word-break:break-all;margin-top:2px;">{{ link.link }}</div>
+          </div>
+          <a href="{{ link.link }}" target="_blank" rel="noopener noreferrer" class="btn-join-call" style="padding:8px 18px;font-size:13px;">
+            <i class="fas fa-external-link-alt"></i> Open
+          </a>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div style="padding:48px;text-align:center;color:var(--text-muted);">
+          <i class="fas fa-video" style="font-size:40px;opacity:0.2;display:block;margin-bottom:12px;"></i>
+          No teleconsult links saved yet.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

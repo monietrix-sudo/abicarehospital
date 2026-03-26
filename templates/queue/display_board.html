@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="refresh" content="20" />
+  <title>Waiting Room — Queue</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #06304A;
+      color: #fff;
+      min-height: 100vh;
+      padding: 32px;
+    }
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .header h1 { font-size: 32px; font-weight: 800; }
+    .header .time { font-size: 28px; font-weight: 700; opacity: .7; }
+    .now-serving {
+      background: linear-gradient(135deg, #00C49A, #009E7C);
+      border-radius: 16px;
+      padding: 28px 36px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    .now-serving .label { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; opacity: .85; }
+    .now-serving .number { font-size: 96px; font-weight: 800; line-height: 1; }
+    .now-serving .name { font-size: 28px; font-weight: 700; }
+    .now-serving .doctor { font-size: 18px; opacity: .8; margin-top: 4px; }
+    .queue-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .queue-card {
+      background: rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .queue-card .num { font-size: 48px; font-weight: 800; line-height: 1; color: #00C49A; }
+    .queue-card .patient { font-size: 15px; font-weight: 600; margin-top: 6px; }
+    .footer { margin-top: 32px; text-align: center; opacity: .4; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Waiting Room</h1>
+      <div style="opacity:.6;font-size:16px;">{{ now|date:"l, F j, Y" }}</div>
+    </div>
+    <div class="time" id="clock">{{ now|time:"g:i A" }}</div>
+  </div>
+
+  {% with entries|first as first_called %}
+  {% if first_called and first_called.status == 'called' %}
+  <div class="now-serving">
+    <div>
+      <div class="label">Now Serving</div>
+      <div class="number">{{ first_called.queue_number }}</div>
+    </div>
+    <div>
+      <div class="name">{{ first_called.patient.full_name }}</div>
+      <div class="doctor">{% if first_called.doctor %}Dr. {{ first_called.doctor.get_full_name }}{% endif %}</div>
+    </div>
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.6;margin-bottom:14px;">
+    Waiting ({{ entries|length }})
+  </div>
+  <div class="queue-grid">
+    {% for entry in entries %}
+    {% if entry.status == 'waiting' %}
+    <div class="queue-card">
+      <div class="num">{{ entry.queue_number }}</div>
+      <div class="patient">{{ entry.patient.first_name }}</div>
+      {% if entry.doctor %}
+      <div style="font-size:12px;opacity:.6;margin-top:4px;">Dr. {{ entry.doctor.last_name }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="footer">Page auto-refreshes every 20 seconds · {{ now|time:"g:i A" }}</div>
+
+  <script>
+    function updateClock() {
+      const now = new Date();
+      let h = now.getHours(), m = now.getMinutes();
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      document.getElementById('clock').textContent =
+        h + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>

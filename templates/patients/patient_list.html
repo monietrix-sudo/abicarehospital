@@ -1,0 +1,186 @@
+{% extends "base/base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Patients</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> › Patients
+      {% if query %} › Search: "{{ query }}"{% endif %}
+    </div>
+  </div>
+  {% if user.role != 'patient' %}
+  <a href="{% url 'patients:add_patient' %}" class="btn-abi-primary">
+    <i class="fas fa-user-plus"></i> Register New Patient
+  </a>
+  {% endif %}
+</div>
+
+<!-- Search & Filters -->
+<div class="card-abi mb-4">
+  <div class="card-body-abi">
+    <form method="get" class="form-abi">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-5">
+          <label class="form-label">Search</label>
+          <div style="position:relative;">
+            <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+            <input type="text" name="q" value="{{ query }}" class="form-control"
+                   placeholder="Name, hospital number, phone…" style="padding-left:36px;" />
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label">Gender</label>
+          <select name="gender" class="form-select">
+            <option value="">All Genders</option>
+            <option value="M" {% if gender_filter == 'M' %}selected{% endif %}>Male</option>
+            <option value="F" {% if gender_filter == 'F' %}selected{% endif %}>Female</option>
+            <option value="O" {% if gender_filter == 'O' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label">Blood Group</label>
+          <select name="blood_group" class="form-select">
+            <option value="">All</option>
+            <option value="A+"  {% if blood_group_filter == "A+"  %}selected{% endif %}>A+</option>
+            <option value="A-"  {% if blood_group_filter == "A-"  %}selected{% endif %}>A-</option>
+            <option value="B+"  {% if blood_group_filter == "B+"  %}selected{% endif %}>B+</option>
+            <option value="B-"  {% if blood_group_filter == "B-"  %}selected{% endif %}>B-</option>
+            <option value="AB+" {% if blood_group_filter == "AB+" %}selected{% endif %}>AB+</option>
+            <option value="AB-" {% if blood_group_filter == "AB-" %}selected{% endif %}>AB-</option>
+            <option value="O+"  {% if blood_group_filter == "O+"  %}selected{% endif %}>O+</option>
+            <option value="O-"  {% if blood_group_filter == "O-"  %}selected{% endif %}>O-</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-3">
+          <div style="display:flex;gap:8px;">
+            <button type="submit" class="btn-abi-primary" style="flex:1;">
+              <i class="fas fa-search"></i> Search
+            </button>
+            {% if query or gender_filter or blood_group_filter %}
+            <a href="{% url 'patient_detail:list' %}" class="btn-abi-outline">Clear</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Results count -->
+{% if query %}
+<p style="color:var(--text-muted);font-size:14px;margin-bottom:12px;">
+  Found <strong>{{ total_results }}</strong> patient{{ total_results|pluralize }} for "{{ query }}"
+</p>
+{% endif %}
+
+<!-- Patient table -->
+<div class="card-abi">
+  <div class="card-body-abi" style="padding:0;">
+    {% if page_obj.object_list %}
+    <div style="overflow-x:auto;">
+      <table class="table-abi">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Hospital No.</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Blood Group</th>
+            <th>Phone</th>
+            <th>Doctor</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for patient in page_obj %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:12px;">
+                {% if patient.photo %}
+                  <img src="{{ patient.photo.url }}" class="patient-avatar" style="width:40px;height:40px;" />
+                {% else %}
+                  <div class="patient-avatar-placeholder" style="width:40px;height:40px;font-size:14px;font-weight:700;">
+                    {{ patient.first_name|first }}{{ patient.last_name|first }}
+                  </div>
+                {% endif %}
+                <div>
+                  <div style="font-weight:600;font-size:14px;">{{ patient.full_name }}</div>
+                  <div style="font-size:11px;color:var(--text-muted);">Registered {{ patient.created_at|date:"M d, Y" }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span style="font-family:monospace;font-size:13px;color:var(--primary);">{{ patient.hospital_number }}</span></td>
+            <td>{{ patient.age }} yrs</td>
+            <td>{{ patient.get_gender_display }}</td>
+            <td>
+              {% if patient.blood_group %}
+              <span class="badge-abi badge-danger">{{ patient.blood_group }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ patient.phone_number }}</td>
+            <td>
+              {% if patient.assigned_doctor %}
+                Dr. {{ patient.assigned_doctor.last_name }}
+              {% else %}
+                <span style="color:var(--text-muted);">Unassigned</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-primary" style="padding:6px 14px;font-size:12px;">
+                  <i class="fas fa-eye"></i> View
+                </a>
+                {% if user.role != 'patient' %}
+                <a href="{% url 'patient_detail:edit' patient.hospital_number %}" class="btn-abi-outline" style="padding:6px 14px;font-size:12px;">
+                  <i class="fas fa-edit"></i>
+                </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="padding:16px 22px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);">
+      <div style="font-size:13px;color:var(--text-muted);">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      </div>
+      <div style="display:flex;gap:6px;">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
+           class="btn-abi-outline" style="padding:6px 14px;font-size:13px;">
+          <i class="fas fa-chevron-left"></i> Prev
+        </a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
+           class="btn-abi-primary" style="padding:6px 14px;font-size:13px;">
+          Next <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="padding:60px;text-align:center;color:var(--text-muted);">
+      <i class="fas fa-user-slash" style="font-size:48px;opacity:0.2;display:block;margin-bottom:16px;"></i>
+      <div style="font-size:18px;font-weight:600;margin-bottom:8px;">No patients found</div>
+      {% if query %}
+      <p>No results for "{{ query }}". Try a different search term.</p>
+      {% else %}
+      <p>No patients registered yet.</p>
+      <a href="{% url 'patients:add_patient' %}" class="btn-abi-primary" style="display:inline-flex;margin-top:16px;">
+        <i class="fas fa-user-plus"></i> Register First Patient
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

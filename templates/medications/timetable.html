@@ -1,0 +1,161 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>{{ schedule.drug_name }}</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'medications:list' %}">Medications</a> ›
+      Timetable
+    </div>
+  </div>
+  <a href="{% url 'patient_detail:detail' schedule.patient.hospital_number %}" class="btn-abi-outline">
+    <i class="fas fa-arrow-left"></i> Back to Patient
+  </a>
+</div>
+
+<!-- Prescription summary -->
+<div class="card-abi mb-4" style="border-left:4px solid var(--accent);">
+  <div class="card-body-abi">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;">
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;">Drug</div>
+        <div style="font-size:18px;font-weight:700;margin-top:2px;">{{ schedule.drug_name }}</div>
+        <div style="font-size:14px;color:var(--text-muted);">{{ schedule.dosage }}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;">Frequency</div>
+        <div style="font-size:16px;font-weight:600;margin-top:2px;">{{ schedule.get_frequency_display }}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;">Route</div>
+        <div style="font-size:16px;font-weight:600;margin-top:2px;">{{ schedule.get_route_display }}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;">Duration</div>
+        <div style="font-size:16px;font-weight:600;margin-top:2px;">{{ schedule.start_date|date:"M d" }} – {{ schedule.end_date|date:"M d, Y" }}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;">Prescribed By</div>
+        <div style="font-size:16px;font-weight:600;margin-top:2px;">Dr. {{ schedule.prescribed_by.get_full_name|default:"—" }}</div>
+      </div>
+      {% if schedule.instructions %}
+      <div style="grid-column:1/-1;">
+        <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;">Instructions</div>
+        <div style="font-size:14px;margin-top:2px;color:var(--warning);font-weight:500;"><i class="fas fa-info-circle"></i> {{ schedule.instructions }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Progress overview -->
+{% with doses.count as total_doses %}
+{% with doses|dictsort:"taken"|last as taken_count %}
+<div class="card-abi mb-4">
+  <div class="card-body-abi">
+    {% with doses|length as total %}
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:6px;">Completion Progress</div>
+        <div style="background:var(--border);border-radius:100px;height:10px;overflow:hidden;">
+          <div style="height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:100px;transition:width 0.5s;width:{% widthratio doses|dictsortreversed:"taken"|length total 100 %}%;"></div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:22px;font-weight:700;color:var(--primary);">{{ doses|dictsortreversed:"taken"|length }}/{{ total }}</div>
+        <div style="font-size:12px;color:var(--text-muted);">doses taken</div>
+      </div>
+    </div>
+    {% endwith %}
+  </div>
+</div>
+{% endwith %}
+{% endwith %}
+
+<!-- Dose timetable -->
+<div class="card-abi">
+  <div class="card-header-abi">
+    <i class="fas fa-clock" style="color:var(--primary);"></i>
+    <h2>Dose Schedule</h2>
+    <span style="font-size:13px;color:var(--text-muted);margin-left:auto;">
+      Tap ○ to mark a dose as taken
+    </span>
+  </div>
+  <div class="card-body-abi">
+
+    <!-- Group doses by date -->
+    {% regroup doses by scheduled_datetime|date:"Y-m-d" as date_groups %}
+    {% for date_group in date_groups %}
+    <div style="margin-bottom:20px;">
+      <!-- Date header -->
+      <div style="font-weight:700;font-size:13px;color:var(--primary);text-transform:uppercase;letter-spacing:0.08em;padding:8px 0;border-bottom:2px solid var(--primary);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-calendar-day"></i>
+        {{ date_group.grouper }}
+        {% if date_group.grouper == today|date:"Y-m-d" %}
+        <span class="badge-abi badge-accent" style="font-size:10px;">TODAY</span>
+        {% endif %}
+      </div>
+
+      {% for dose in date_group.list %}
+      <div class="dose-item">
+        <!-- Tick button — posts to tick_dose view -->
+        <form method="post" action="{% url 'medications:tick_dose' dose.pk %}" style="margin:0;">
+          {% csrf_token %}
+          <button type="submit"
+                  class="dose-tick-btn {% if dose.taken %}taken{% endif %}"
+                  title="{% if dose.taken %}Taken at {{ dose.taken_at|time:'g:i A' }}{% else %}Mark as taken{% endif %}"
+                  {% if dose.taken %}disabled{% endif %}>
+            <i class="fas fa-check"></i>
+          </button>
+        </form>
+
+        <!-- Dose info -->
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:15px;{% if dose.taken %}text-decoration:line-through;color:var(--text-muted);{% endif %}">
+            {{ dose.scheduled_datetime|time:"g:i A" }}
+            <span style="font-weight:400;font-size:13px;color:var(--text-muted);">— {{ schedule.drug_name }} {{ schedule.dosage }}</span>
+          </div>
+          {% if dose.taken and dose.taken_at %}
+          <div style="font-size:12px;color:var(--success);margin-top:2px;">
+            <i class="fas fa-check-circle"></i> Taken at {{ dose.taken_at|time:"g:i A" }}
+          </div>
+          {% elif dose.scheduled_datetime < now %}
+          <div style="font-size:12px;color:var(--danger);margin-top:2px;">
+            <i class="fas fa-exclamation-circle"></i> Overdue
+          </div>
+          {% else %}
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Upcoming</div>
+          {% endif %}
+        </div>
+
+        <!-- Status icon -->
+        <div>
+          {% if dose.taken %}
+          <span class="badge-abi badge-success"><i class="fas fa-check"></i> Done</span>
+          {% elif dose.scheduled_datetime < now %}
+          <span class="badge-abi badge-danger">Missed</span>
+          {% else %}
+          <span class="badge-abi badge-muted">Pending</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% empty %}
+    <div style="padding:48px;text-align:center;color:var(--text-muted);">
+      <i class="fas fa-calendar-times" style="font-size:40px;opacity:0.2;display:block;margin-bottom:12px;"></i>
+      No doses scheduled (PRN medication — take as needed).
+    </div>
+    {% endfor %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Make the now variable available (passed from view context)
+  // We use data-attribute trick for comparison in template logic
+</script>
+{% endblock %}

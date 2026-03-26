@@ -1,0 +1,224 @@
+{% extends "base/base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Dashboard</h1>
+    <div class="breadcrumb-abi">
+      {{ HOSPITAL_NAME }} · Today is {{ today|date:"l, F j, Y" }}
+    </div>
+  </div>
+  {% if user.role != 'patient' %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="{% url 'patients:add_patient' %}" class="btn-abi-primary">
+      <i class="fas fa-user-plus"></i> Register Patient
+    </a>
+    <a href="{% url 'appointments:book' %}" class="btn-abi-outline">
+      <i class="fas fa-calendar-plus"></i> Book Appointment
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── STAT CARDS ──────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'patient_detail:list' %}" class="stat-card">
+      <div class="stat-icon blue"><i class="fas fa-hospital-user"></i></div>
+      <div>
+        <div class="stat-value">{{ total_patients }}</div>
+        <div class="stat-label">Total Active Patients</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'appointments:list' %}" class="stat-card">
+      <div class="stat-icon teal"><i class="fas fa-calendar-check"></i></div>
+      <div>
+        <div class="stat-value">{{ today_appt_count }}</div>
+        <div class="stat-label">Today's Appointments</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'lab_results:list' %}" class="stat-card">
+      <div class="stat-icon amber"><i class="fas fa-flask"></i></div>
+      <div>
+        <div class="stat-value">Lab</div>
+        <div class="stat-label">Results &amp; Reports</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'records:list' %}" class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-file-medical"></i></div>
+      <div>
+        <div class="stat-value">Records</div>
+        <div class="stat-label">Medical Documents</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ── MAIN GRID: Appointments + Recent Patients ─────────────── -->
+<div class="row g-3">
+
+  <!-- Today's Appointments -->
+  <div class="col-12 col-lg-7">
+    <div class="card-abi h-100">
+      <div class="card-header-abi">
+        <i class="fas fa-calendar-day" style="color:var(--primary);"></i>
+        <h2>Today's Appointments</h2>
+        <a href="{% url 'appointments:list' %}" class="btn-abi-outline ms-auto" style="padding:6px 16px;font-size:13px;">View All</a>
+      </div>
+      <div class="card-body-abi" style="padding:0;">
+        {% if today_appointments %}
+        <table class="table-abi">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Time</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appt in today_appointments %}
+            <tr>
+              <td>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  {% if appt.patient.photo %}
+                    <img src="{{ appt.patient.photo.url }}" class="patient-avatar" style="width:32px;height:32px;" />
+                  {% else %}
+                    <div class="patient-avatar-placeholder" style="width:32px;height:32px;font-size:12px;font-weight:700;">
+                      {{ appt.patient.first_name|first }}{{ appt.patient.last_name|first }}
+                    </div>
+                  {% endif %}
+                  <div>
+                    <div style="font-weight:600;font-size:14px;">{{ appt.patient.full_name }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">{{ appt.patient.hospital_number }}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="font-size:14px;font-weight:600;">{{ appt.appointment_time|time:"g:i A" }}</td>
+              <td>
+                <span class="badge-abi {% if appt.appointment_type == 'teleconsult' %}badge-accent{% else %}badge-primary{% endif %}">
+                  {{ appt.get_appointment_type_display }}
+                </span>
+              </td>
+              <td>
+                <span class="badge-abi
+                  {% if appt.status == 'confirmed' %}badge-success
+                  {% elif appt.status == 'cancelled' %}badge-danger
+                  {% elif appt.status == 'completed' %}badge-muted
+                  {% else %}badge-warning{% endif %}">
+                  {{ appt.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <a href="{% url 'appointments:detail' appt.pk %}" class="btn-abi-outline" style="padding:5px 12px;font-size:12px;">
+                  View
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="padding:48px;text-align:center;color:var(--text-muted);">
+          <i class="fas fa-calendar-times" style="font-size:36px;opacity:0.3;display:block;margin-bottom:12px;"></i>
+          No appointments scheduled for today.
+          <br /><br />
+          <a href="{% url 'appointments:book' %}" class="btn-abi-primary" style="display:inline-flex;">
+            <i class="fas fa-plus"></i> Book Appointment
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Patients -->
+  <div class="col-12 col-lg-5">
+    <div class="card-abi h-100">
+      <div class="card-header-abi">
+        <i class="fas fa-hospital-user" style="color:var(--accent);"></i>
+        <h2>Recent Patients</h2>
+        <a href="{% url 'patient_detail:list' %}" class="btn-abi-outline ms-auto" style="padding:6px 16px;font-size:13px;">View All</a>
+      </div>
+      <div class="card-body-abi" style="padding:0;">
+        {% if recent_patients %}
+        {% for patient in recent_patients %}
+        <a href="{% url 'patient_detail:detail' patient.hospital_number %}"
+           style="display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;transition:background 0.15s;"
+           onmouseover="this.style.background='rgba(10,92,138,0.03)'" onmouseout="this.style.background=''">
+          {% if patient.photo %}
+            <img src="{{ patient.photo.url }}" class="patient-avatar" style="width:44px;height:44px;" />
+          {% else %}
+            <div class="patient-avatar-placeholder" style="width:44px;height:44px;font-size:15px;font-weight:700;">
+              {{ patient.first_name|first }}{{ patient.last_name|first }}
+            </div>
+          {% endif %}
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:14px;">{{ patient.full_name }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ patient.hospital_number }} · {{ patient.age }} yrs · {{ patient.get_gender_display }}</div>
+          </div>
+          <div style="flex-shrink:0;">
+            {% if patient.blood_group %}
+            <span class="badge-abi badge-primary">{{ patient.blood_group }}</span>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+        {% else %}
+        <div style="padding:48px;text-align:center;color:var(--text-muted);">
+          <i class="fas fa-users" style="font-size:36px;opacity:0.3;display:block;margin-bottom:12px;"></i>
+          No patients registered yet.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div><!-- /row -->
+
+<!-- ── QUICK ACTIONS ROW ──────────────────────────────────────── -->
+{% if user.role != 'patient' %}
+<div class="row g-3 mt-1">
+  <div class="col-12">
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-bolt" style="color:var(--warm);"></i>
+        <h2>Quick Actions</h2>
+      </div>
+      <div class="card-body-abi">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;">
+          <a href="{% url 'patients:add_patient' %}" class="btn-abi-primary">
+            <i class="fas fa-user-plus"></i> Register Patient
+          </a>
+          <a href="{% url 'appointments:book' %}" class="btn-abi-outline">
+            <i class="fas fa-calendar-plus"></i> Book Appointment
+          </a>
+          <a href="{% url 'lab_results:templates' %}" class="btn-abi-outline">
+            <i class="fas fa-file-medical-alt"></i> Manage Lab Templates
+          </a>
+          <a href="{% url 'records:list' %}" class="btn-abi-outline">
+            <i class="fas fa-folder-open"></i> Medical Records
+          </a>
+          {% if user.is_admin_staff %}
+          <a href="{% url 'audit_logs:list' %}" class="btn-abi-outline">
+            <i class="fas fa-history"></i> Audit Logs
+          </a>
+          <a href="{% url 'admin:index' %}" class="btn-abi-outline">
+            <i class="fas fa-cogs"></i> Admin Panel
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Upload PDF Lab Template</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'lab_results:templates' %}">Lab Templates</a> › Upload PDF
+    </div>
+  </div>
+  <a href="{% url 'lab_results:templates' %}" class="btn-abi-outline">
+    <i class="fas fa-arrow-left"></i> Back
+  </a>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-7">
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-file-pdf" style="color:#E53E3E;font-size:20px;"></i>
+        <h2>Upload a PDF Lab Form</h2>
+      </div>
+      <div class="card-body-abi">
+
+        <div style="background:#EBF4FF;border:1px solid #BEE3F8;border-left:4px solid #0A5C8A;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:13px;color:#2C5282;">
+          <i class="fas fa-info-circle"></i>
+          <strong> How it works:</strong> Upload your hospital's existing lab form as a PDF.
+          When a lab technician fills results for a patient, they will see the PDF on screen
+          and click anywhere to place text boxes — just like Canva. The filled form is then
+          released to the patient portal.
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Template Name *</label>
+              <input type="text" name="name" class="form-control" required
+                     placeholder="e.g. Full Blood Count Form, Biochemistry Panel" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Category *</label>
+              <select name="category" class="form-select">
+                {% for val, label in category_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Description <span style="color:#718096;font-weight:400;">(optional)</span></label>
+              <input type="text" name="description" class="form-control"
+                     placeholder="Brief description" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">PDF File * <span style="color:#718096;font-weight:400;">(max 20MB)</span></label>
+              <div id="dropZone"
+                   style="border:2px dashed #E2E8F0;border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;background:#FAFBFC;"
+                   onclick="document.getElementById('pdfInput').click()"
+                   ondragover="event.preventDefault();this.style.borderColor='#0A5C8A';this.style.background='#EBF4FF'"
+                   ondragleave="this.style.borderColor='#E2E8F0';this.style.background='#FAFBFC'"
+                   ondrop="handleDrop(event)">
+                <i class="fas fa-file-pdf" id="dropIcon" style="font-size:48px;color:#CBD5E0;display:block;margin-bottom:12px;"></i>
+                <div id="dropText" style="font-size:15px;font-weight:600;color:#4A5568;margin-bottom:4px;">
+                  Drag &amp; drop your PDF here
+                </div>
+                <div style="font-size:13px;color:#718096;">or click to browse</div>
+                <input type="file" id="pdfInput" name="template_pdf" accept=".pdf"
+                       style="display:none;" onchange="showFile(this)" />
+              </div>
+              <div id="fileInfo" style="display:none;margin-top:10px;background:#F0FFF4;border:1px solid #9AE6B4;border-radius:8px;padding:10px 14px;display:none;align-items:center;gap:10px;">
+                <i class="fas fa-check-circle" style="color:#38A169;font-size:18px;"></i>
+                <div>
+                  <div id="fileName" style="font-weight:600;font-size:14px;"></div>
+                  <div id="fileSize" style="font-size:12px;color:#718096;"></div>
+                </div>
+                <button type="button" onclick="clearFile()"
+                        style="margin-left:auto;background:none;border:none;color:#E53E3E;cursor:pointer;font-size:14px;">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-12" style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+              <a href="{% url 'lab_results:templates' %}" class="btn-abi-outline">Cancel</a>
+              <button type="submit" class="btn-abi-primary">
+                <i class="fas fa-upload"></i> Upload Template
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('dropIcon').style.color = '#38A169';
+  document.getElementById('dropText').textContent = 'PDF selected';
+  const info = document.getElementById('fileInfo');
+  info.style.display = 'flex';
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+}
+function clearFile() {
+  document.getElementById('pdfInput').value = '';
+  document.getElementById('fileInfo').style.display = 'none';
+  document.getElementById('dropIcon').style.color = '#CBD5E0';
+  document.getElementById('dropText').textContent = 'Drag & drop your PDF here';
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').style.borderColor = '#E2E8F0';
+  document.getElementById('dropZone').style.background = '#FAFBFC';
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') {
+    const input = document.getElementById('pdfInput');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    showFile(input);
+  } else {
+    alert('Please drop a PDF file.');
+  }
+}
+</script>
+{% endblock %}

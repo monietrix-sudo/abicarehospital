@@ -1,0 +1,90 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Prescribe Medication</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'patient_detail:detail' patient.hospital_number %}">{{ patient.full_name }}</a> › Prescribe
+    </div>
+  </div>
+</div>
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-8">
+    <!-- Patient banner -->
+    <div class="card-abi mb-4" style="border-left:4px solid var(--primary);">
+      <div class="card-body-abi">
+        <div style="display:flex;align-items:center;gap:16px;">
+          {% if patient.photo %}
+          <img src="{{ patient.photo.url }}" class="patient-avatar" style="width:52px;height:52px;" />
+          {% else %}
+          <div class="patient-avatar-placeholder" style="width:52px;height:52px;font-size:18px;font-weight:700;">{{ patient.first_name|first }}{{ patient.last_name|first }}</div>
+          {% endif %}
+          <div>
+            <div style="font-size:18px;font-weight:700;">{{ patient.full_name }}</div>
+            <div style="font-size:13px;color:var(--text-muted);">{{ patient.hospital_number }} · {{ patient.age }} yrs · {{ patient.get_gender_display }}{% if patient.allergies %} · <span style="color:var(--danger);"><i class="fas fa-exclamation-triangle"></i> {{ patient.allergies }}</span>{% endif %}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prescription form -->
+    <div class="card-abi">
+      <div class="card-header-abi"><i class="fas fa-pills" style="color:var(--accent);"></i><h2>New Prescription</h2></div>
+      <div class="card-body-abi">
+        <form method="post" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Drug Name *</label>
+              <input type="text" name="drug_name" class="form-control" placeholder="e.g. Amoxicillin" required />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Dosage *</label>
+              <input type="text" name="dosage" class="form-control" placeholder="e.g. 500mg" required />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Route *</label>
+              <select name="route" class="form-select" required>
+                {% for val, label in route_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Frequency *</label>
+              <select name="frequency" class="form-select" required>
+                {% for val, label in frequency_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Start Date *</label>
+              <input type="date" name="start_date" class="form-control" value="{{ today }}" required />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">End Date *</label>
+              <input type="date" name="end_date" class="form-control" required />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Special Instructions</label>
+              <textarea name="instructions" class="form-control" rows="3" placeholder="e.g. Take with food, avoid alcohol…"></textarea>
+            </div>
+            <div class="col-12">
+              <div class="alert-abi alert-info">
+                <i class="fas fa-info-circle"></i>
+                <span>A dose timetable will be auto-generated based on the frequency and date range. The patient can tick off each dose as taken.</span>
+              </div>
+            </div>
+            <div class="col-12" style="display:flex;gap:12px;justify-content:flex-end;">
+              <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-outline">Cancel</a>
+              <button type="submit" class="btn-abi-accent"><i class="fas fa-prescription-bottle"></i> Prescribe & Generate Timetable</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

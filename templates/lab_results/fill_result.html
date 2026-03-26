@@ -1,0 +1,106 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Fill Lab Result</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'lab_results:list' %}">Lab Results</a> › Fill
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-9">
+
+    <!-- Patient & Test header -->
+    <div class="card-abi mb-4" style="border-left:4px solid var(--primary);">
+      <div class="card-body-abi">
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+          <div style="flex:1;">
+            <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Patient</div>
+            <div style="font-size:18px;font-weight:700;">{{ result.patient.full_name }}</div>
+            <div style="font-size:13px;color:var(--text-muted);">{{ result.patient.hospital_number }} · {{ result.patient.age }} yrs · {{ result.patient.get_gender_display }}</div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Test</div>
+            <div style="font-size:18px;font-weight:700;">{{ result.template.name }}</div>
+            <div style="font-size:13px;color:var(--text-muted);">{{ result.template.get_category_display }}</div>
+          </div>
+          <div>
+            <span class="badge-abi badge-warning" style="font-size:13px;padding:5px 14px;">{{ result.get_status_display }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result value form -->
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-clipboard-list" style="color:var(--primary);"></i>
+        <h2>Enter Result Values</h2>
+      </div>
+      <div class="card-body-abi">
+        <form method="post" action="{% url 'lab_results:fill' result.pk %}" class="form-abi">
+          {% csrf_token %}
+
+          {% if template_fields %}
+          <div style="overflow-x:auto;margin-bottom:20px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);background:var(--bg-page);border-bottom:2px solid var(--border);">Parameter</th>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);background:var(--bg-page);border-bottom:2px solid var(--border);">Result Value</th>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);background:var(--bg-page);border-bottom:2px solid var(--border);">Unit</th>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);background:var(--bg-page);border-bottom:2px solid var(--border);">Normal Range</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for field in template_fields %}
+                <tr style="border-bottom:1px solid var(--border);">
+                  <td style="padding:12px;font-weight:600;font-size:14px;vertical-align:middle;">{{ field.name }}</td>
+                  <td style="padding:8px 12px;vertical-align:middle;">
+                    <input
+                      type="{% if field.field_type == 'number' %}number{% else %}text{% endif %}"
+                      name="field_{{ field.name }}"
+                      value="{{ existing_values|default_if_none:''|default:''  }}"
+                      class="form-control"
+                      style="width:140px;"
+                      placeholder="Enter value…"
+                      step="any"
+                    />
+                  </td>
+                  <td style="padding:12px;font-size:13px;color:var(--text-muted);vertical-align:middle;">{{ field.unit|default:"—" }}</td>
+                  <td style="padding:12px;font-size:13px;color:var(--text-muted);vertical-align:middle;">{{ field.normal_range|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% else %}
+          <div style="padding:40px;text-align:center;color:var(--text-muted);">
+            <i class="fas fa-exclamation-circle" style="font-size:32px;opacity:0.3;display:block;margin-bottom:12px;"></i>
+            No fields defined in this template. Please edit the template first.
+          </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Lab Technician Notes (optional)</label>
+              <textarea name="notes" class="form-control" rows="3" placeholder="Any observations or comments…"></textarea>
+            </div>
+            <div class="col-12" style="display:flex;gap:12px;justify-content:flex-end;">
+              <a href="{% url 'lab_results:list' %}" class="btn-abi-outline">Cancel</a>
+              <button type="submit" class="btn-abi-primary">
+                <i class="fas fa-save"></i> Save Result Values
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

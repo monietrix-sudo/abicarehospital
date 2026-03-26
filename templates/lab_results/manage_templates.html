@@ -1,0 +1,426 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Lab Templates</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'lab_results:list' %}">Lab Results</a> › Templates
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="{% url 'lab_results:upload_pdf_template' %}" class="btn-abi-outline">
+      <i class="fas fa-file-pdf" style="color:#E53E3E;"></i> Upload PDF Form
+    </a>
+    <button class="btn-abi-primary" onclick="openBuilder(null)">
+      <i class="fas fa-plus"></i> Build from Scratch
+    </button>
+  </div>
+</div>
+
+<!-- ── Existing Templates ──────────────────────────────────────── -->
+<div class="card-abi">
+  <div class="card-header-abi">
+    <i class="fas fa-file-medical-alt" style="color:var(--primary);"></i>
+    <h2>All Templates ({{ template_count }})</h2>
+  </div>
+  <div class="card-body-abi" style="padding:0;">
+
+    {% if templates_list %}
+
+      {% for cat_name, cat_templates in grouped_templates.items %}
+
+        <!-- Category header -->
+        <div style="padding:8px 20px 4px;background:var(--bg-page);border-bottom:1px solid var(--border);">
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);">
+            {{ cat_name }}
+          </span>
+        </div>
+
+        {% for tpl in cat_templates %}
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border);">
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:15px;">{{ tpl.name }}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+              {{ tpl.field_count }} field{{ tpl.field_count|pluralize }}
+              &nbsp;·&nbsp; Created {{ tpl.created_at|date:"M d, Y" }}
+              {% if tpl.description %}&nbsp;·&nbsp; {{ tpl.description }}{% endif %}
+            </div>
+            <!-- Field preview pills -->
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">
+              {% for field in tpl.fields %}
+                {% if forloop.counter <= 6 %}
+                <span style="background:rgba(10,92,138,0.08);color:var(--primary);font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;">
+                  {{ field.name }}{% if field.unit %} ({{ field.unit }}){% endif %}
+                </span>
+                {% endif %}
+              {% endfor %}
+              {% if tpl.field_count > 6 %}
+              <span style="color:var(--text-muted);font-size:11px;padding:3px 6px;">
+                +{{ tpl.field_count|add:"-6" }} more
+              </span>
+              {% endif %}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            {% if tpl.is_pdf_based %}
+            <span class="badge-abi" style="background:#FFF5F5;color:#E53E3E;border:1px solid #FED7D7;"><i class="fas fa-file-pdf"></i> PDF Form</span>
+            {% else %}
+            <span class="badge-abi" style="background:#EBF4FF;color:#0A5C8A;border:1px solid #BEE3F8;"><i class="fas fa-list"></i> Scratch</span>
+            {% endif %}
+            {% if tpl.is_active %}
+            <span class="badge-abi badge-success">Active</span>
+            {% else %}
+            <span class="badge-abi badge-muted">Inactive</span>
+            {% endif %}
+            <!-- Pass pk and fields_json safely via data attributes -->
+            <button class="btn-abi-outline" style="padding:6px 14px;font-size:12px;"
+                    data-tpl-pk="{{ tpl.pk }}"
+                    data-tpl-name="{{ tpl.name|escapejs }}"
+                    data-tpl-category="{{ tpl.category }}"
+                    data-tpl-description="{{ tpl.description|escapejs }}"
+                    data-tpl-fields="{{ tpl.fields_json|escapejs }}"
+                    onclick="openBuilder(this)">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+
+      {% endfor %}
+
+    {% else %}
+    <div style="padding:60px;text-align:center;color:var(--text-muted);">
+      <i class="fas fa-file-medical-alt" style="font-size:48px;opacity:0.2;display:block;margin-bottom:16px;"></i>
+      <div style="font-size:18px;font-weight:600;margin-bottom:8px;">No templates yet</div>
+      <p style="margin-bottom:16px;">Click the button below to build your first lab test template.</p>
+      <button class="btn-abi-primary" onclick="openBuilder(null)">
+        <i class="fas fa-plus"></i> Create First Template
+      </button>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+
+<!-- ══ VISUAL BUILDER MODAL ═══════════════════════════════════════ -->
+<div id="builderOverlay" style="display:none;position:fixed;inset:0;background:rgba(6,48,74,0.75);z-index:9999;overflow-y:auto;padding:20px;">
+  <div style="background:#fff;border-radius:16px;max-width:860px;margin:0 auto;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.4);">
+
+    <!-- Modal header -->
+    <div style="background:linear-gradient(135deg,#06304A,#0A5C8A);padding:24px 28px;display:flex;align-items:center;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:10px;background:rgba(0,196,154,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#00C49A;">
+        <i class="fas fa-file-medical-alt"></i>
+      </div>
+      <div style="flex:1;">
+        <div id="modalTitle" style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#fff;">Create Lab Template</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.6);">Build your test form visually — no code needed</div>
+      </div>
+      <button type="button" onclick="closeBuilder()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;width:36px;height:36px;border-radius:8px;font-size:16px;cursor:pointer;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div style="padding:28px;">
+      <form id="templateForm" method="post" action="{% url 'lab_results:templates' %}">
+        {% csrf_token %}
+        <input type="hidden" name="template_id" id="templateId" value="" />
+        <input type="hidden" name="fields_json" id="fieldsJsonInput" value="[]" />
+
+        <!-- Template info -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#2D3748;margin-bottom:6px;">Template Name *</label>
+            <input type="text" id="tplName" name="name" required class="form-control" placeholder="e.g. Full Blood Count" />
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#2D3748;margin-bottom:6px;">Category *</label>
+            <select id="tplCategory" name="category" class="form-select">
+              {% for val, label in category_choices %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="grid-column:1/-1;">
+            <label style="display:block;font-size:13px;font-weight:600;color:#2D3748;margin-bottom:6px;">Description <span style="font-weight:400;color:#718096;">(optional)</span></label>
+            <input type="text" id="tplDescription" name="description" class="form-control" placeholder="Brief description of this test panel" />
+          </div>
+        </div>
+
+        <!-- Parameters heading + Add button -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--primary);">Test Parameters</div>
+            <div style="font-size:12px;color:var(--text-muted);">Each parameter is one measurement on the report</div>
+          </div>
+          <button type="button" onclick="addField()" class="btn-abi-accent" style="padding:8px 18px;font-size:13px;">
+            <i class="fas fa-plus"></i> Add Parameter
+          </button>
+        </div>
+
+        <!-- Quick-add panels -->
+        <div style="margin-bottom:14px;padding:12px 14px;background:#F7FAFC;border-radius:10px;border:1px solid #E2E8F0;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:8px;">
+            <i class="fas fa-bolt" style="color:var(--accent);"></i> Quick Add Common Panels:
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;">
+            <button type="button" onclick="quickAdd('fbc')"  style="background:#EBF4FF;color:#0A5C8A;border:1px solid #BEE3F8;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;cursor:pointer;">+ Full Blood Count</button>
+            <button type="button" onclick="quickAdd('lft')"  style="background:#E6FFFA;color:#00856A;border:1px solid #9DECF9;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;cursor:pointer;">+ Liver Function</button>
+            <button type="button" onclick="quickAdd('rft')"  style="background:#FFF5F5;color:#9B2C2C;border:1px solid #FED7D7;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;cursor:pointer;">+ Renal Function</button>
+            <button type="button" onclick="quickAdd('lipid')" style="background:#FFFBEB;color:#744210;border:1px solid #F6E05E;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;cursor:pointer;">+ Lipid Profile</button>
+            <button type="button" onclick="quickAdd('urine')" style="background:#FAF5FF;color:#553C9A;border:1px solid #D6BCFA;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;cursor:pointer;">+ Urinalysis</button>
+            <button type="button" onclick="quickAdd('thyroid')" style="background:#F0FFF4;color:#276749;border:1px solid #9AE6B4;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;cursor:pointer;">+ Thyroid (TFT)</button>
+          </div>
+        </div>
+
+        <!-- Field table -->
+        <div style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;margin-bottom:20px;">
+          <!-- Table header -->
+          <div style="display:grid;grid-template-columns:2fr 1fr 1.4fr 88px 36px;gap:0;padding:8px 12px;background:#EDF2F7;border-bottom:1px solid #E2E8F0;">
+            <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#718096;">Parameter Name</span>
+            <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#718096;">Unit</span>
+            <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#718096;">Normal Range</span>
+            <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#718096;">Value Type</span>
+            <span></span>
+          </div>
+          <!-- Rows added by JS -->
+          <div id="fieldsContainer"></div>
+          <!-- Empty state -->
+          <div id="emptyFieldsMsg" style="padding:28px;text-align:center;color:#A0AEC0;">
+            <i class="fas fa-flask" style="font-size:24px;opacity:0.4;display:block;margin-bottom:8px;"></i>
+            No parameters yet — click <strong>Add Parameter</strong> or use a quick-add panel above.
+          </div>
+        </div>
+
+        <!-- Form actions -->
+        <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--border);">
+          <button type="button" onclick="closeBuilder()" class="btn-abi-outline">Cancel</button>
+          <button type="submit" id="submitBtn" class="btn-abi-primary">
+            <i class="fas fa-save"></i> Save Template
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+/* ── Quick-add panel definitions ─────────────────────────────────── */
+const PANELS = {
+  fbc:[
+    {name:'Haemoglobin',       unit:'g/dL',        normal_range:'M: 13.5-17.5, F: 12.0-16.0', field_type:'number'},
+    {name:'White Blood Cells', unit:'x10\u00B3/\u00B5L', normal_range:'4.0-11.0',            field_type:'number'},
+    {name:'Platelets',         unit:'x10\u00B3/\u00B5L', normal_range:'150-400',              field_type:'number'},
+    {name:'Red Blood Cells',   unit:'x10\u2076/\u00B5L', normal_range:'M: 4.5-5.9, F: 4.0-5.2', field_type:'number'},
+    {name:'Haematocrit',       unit:'%',            normal_range:'M: 41-53, F: 36-46',        field_type:'number'},
+    {name:'MCV',               unit:'fL',           normal_range:'80-100',                    field_type:'number'},
+    {name:'MCH',               unit:'pg',           normal_range:'26-34',                     field_type:'number'},
+    {name:'Neutrophils',       unit:'%',            normal_range:'45-75',                     field_type:'number'},
+    {name:'Lymphocytes',       unit:'%',            normal_range:'20-40',                     field_type:'number'},
+  ],
+  lft:[
+    {name:'Total Bilirubin',   unit:'\u00B5mol/L',  normal_range:'3-21',                      field_type:'number'},
+    {name:'Direct Bilirubin',  unit:'\u00B5mol/L',  normal_range:'0-5',                       field_type:'number'},
+    {name:'ALT',               unit:'U/L',          normal_range:'M: 7-56, F: 7-45',          field_type:'number'},
+    {name:'AST',               unit:'U/L',          normal_range:'M: 10-40, F: 10-35',        field_type:'number'},
+    {name:'ALP',               unit:'U/L',          normal_range:'44-147',                    field_type:'number'},
+    {name:'Albumin',           unit:'g/L',          normal_range:'35-50',                     field_type:'number'},
+    {name:'Total Protein',     unit:'g/L',          normal_range:'64-83',                     field_type:'number'},
+    {name:'GGT',               unit:'U/L',          normal_range:'M: 8-61, F: 5-36',          field_type:'number'},
+  ],
+  rft:[
+    {name:'Creatinine',        unit:'\u00B5mol/L',  normal_range:'M: 62-115, F: 53-97',       field_type:'number'},
+    {name:'Urea',              unit:'mmol/L',       normal_range:'2.5-7.8',                   field_type:'number'},
+    {name:'Sodium',            unit:'mmol/L',       normal_range:'135-145',                   field_type:'number'},
+    {name:'Potassium',         unit:'mmol/L',       normal_range:'3.5-5.0',                   field_type:'number'},
+    {name:'Chloride',          unit:'mmol/L',       normal_range:'95-105',                    field_type:'number'},
+    {name:'Bicarbonate',       unit:'mmol/L',       normal_range:'22-29',                     field_type:'number'},
+    {name:'eGFR',              unit:'mL/min/1.73m\u00B2', normal_range:'> 60',               field_type:'number'},
+  ],
+  lipid:[
+    {name:'Total Cholesterol', unit:'mmol/L',       normal_range:'< 5.2',                     field_type:'number'},
+    {name:'LDL Cholesterol',   unit:'mmol/L',       normal_range:'< 3.4',                     field_type:'number'},
+    {name:'HDL Cholesterol',   unit:'mmol/L',       normal_range:'M: > 1.0, F: > 1.3',        field_type:'number'},
+    {name:'Triglycerides',     unit:'mmol/L',       normal_range:'< 1.7',                     field_type:'number'},
+    {name:'Total/HDL Ratio',   unit:'',             normal_range:'< 5.0',                     field_type:'number'},
+  ],
+  urine:[
+    {name:'Appearance',        unit:'',             normal_range:'Clear',      field_type:'text'},
+    {name:'Colour',            unit:'',             normal_range:'Yellow',     field_type:'text'},
+    {name:'pH',                unit:'',             normal_range:'4.5-8.0',    field_type:'number'},
+    {name:'Specific Gravity',  unit:'',             normal_range:'1.005-1.030',field_type:'number'},
+    {name:'Protein',           unit:'',             normal_range:'Negative',   field_type:'text'},
+    {name:'Glucose',           unit:'',             normal_range:'Negative',   field_type:'text'},
+    {name:'Blood',             unit:'',             normal_range:'Negative',   field_type:'text'},
+    {name:'Leucocytes',        unit:'',             normal_range:'Negative',   field_type:'text'},
+    {name:'Nitrites',          unit:'',             normal_range:'Negative',   field_type:'text'},
+  ],
+  thyroid:[
+    {name:'TSH',               unit:'mIU/L',        normal_range:'0.4-4.0',    field_type:'number'},
+    {name:'Free T4 (fT4)',     unit:'pmol/L',       normal_range:'9-24',       field_type:'number'},
+    {name:'Free T3 (fT3)',     unit:'pmol/L',       normal_range:'3.5-7.8',    field_type:'number'},
+    {name:'Total T4',          unit:'nmol/L',       normal_range:'58-161',     field_type:'number'},
+  ],
+};
+
+let fieldCount = 0;
+
+/* openBuilder(btn) — pass null to create, or the Edit button element to edit */
+function openBuilder(btn) {
+  fieldCount = 0;
+  document.getElementById('fieldsContainer').innerHTML = '';
+  document.getElementById('templateId').value    = '';
+  document.getElementById('tplName').value       = '';
+  document.getElementById('tplDescription').value = '';
+  document.getElementById('fieldsJsonInput').value = '[]';
+  document.getElementById('tplCategory').value  = 'haematology';
+  document.getElementById('modalTitle').textContent = 'Create Lab Template';
+  document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save Template';
+
+  if (btn) {
+    // Editing an existing template — read from data attributes (safe, no inline JSON)
+    document.getElementById('modalTitle').textContent = 'Edit Lab Template';
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Update Template';
+    document.getElementById('templateId').value    = btn.dataset.tplPk;
+    document.getElementById('tplName').value       = btn.dataset.tplName;
+    document.getElementById('tplDescription').value = btn.dataset.tplDescription;
+    document.getElementById('tplCategory').value   = btn.dataset.tplCategory;
+    try {
+      const fields = JSON.parse(btn.dataset.tplFields || '[]');
+      if (Array.isArray(fields)) fields.forEach(f => addField(f));
+    } catch(e) { console.warn('Could not parse template fields', e); }
+  }
+
+  updateEmptyState();
+  document.getElementById('builderOverlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBuilder() {
+  document.getElementById('builderOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function addField(data) {
+  data = data || {};
+  fieldCount++;
+  const idx = fieldCount;
+  const container = document.getElementById('fieldsContainer');
+  const div = document.createElement('div');
+  div.id = 'field-row-' + idx;
+  div.style.cssText = [
+    'display:grid',
+    'grid-template-columns:2fr 1fr 1.4fr 88px 36px',
+    'gap:6px',
+    'align-items:center',
+    'padding:7px 12px',
+    'border-bottom:1px solid #E2E8F0',
+    'background:#fff',
+  ].join(';');
+
+  const nameVal  = escAttr(data.name  || '');
+  const unitVal  = escAttr(data.unit  || '');
+  const rangeVal = escAttr(data.normal_range || '');
+  const isText   = (data.field_type === 'text');
+
+  div.innerHTML =
+    '<input type="text" placeholder="e.g. Haemoglobin" value="' + nameVal + '" ' +
+      'class="form-control field-name" style="font-size:13px;padding:5px 8px;" oninput="syncJson()" />' +
+    '<input type="text" placeholder="g/dL" value="' + unitVal + '" ' +
+      'class="form-control field-unit" style="font-size:13px;padding:5px 8px;" oninput="syncJson()" />' +
+    '<input type="text" placeholder="12-17" value="' + rangeVal + '" ' +
+      'class="form-control field-range" style="font-size:13px;padding:5px 8px;" oninput="syncJson()" />' +
+    '<select class="form-select field-type" style="font-size:12px;padding:5px 4px;" onchange="syncJson()">' +
+      '<option value="number"' + (isText ? '' : ' selected') + '>Number</option>' +
+      '<option value="text"'   + (isText ? ' selected' : '') + '>Text</option>' +
+    '</select>' +
+    '<button type="button" onclick="removeField(' + idx + ')" ' +
+      'style="background:#FFF5F5;border:1px solid #FED7D7;color:#E53E3E;' +
+             'width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:11px;">' +
+      '<i class="fas fa-trash-alt"></i></button>';
+
+  container.appendChild(div);
+  updateEmptyState();
+  syncJson();
+}
+
+function removeField(idx) {
+  const el = document.getElementById('field-row-' + idx);
+  if (el) el.remove();
+  updateEmptyState();
+  syncJson();
+}
+
+function updateEmptyState() {
+  const c = document.getElementById('fieldsContainer');
+  document.getElementById('emptyFieldsMsg').style.display =
+    c.children.length === 0 ? 'block' : 'none';
+}
+
+function syncJson() {
+  const rows = document.getElementById('fieldsContainer').querySelectorAll('[id^="field-row-"]');
+  const fields = [];
+  rows.forEach(row => {
+    const name = row.querySelector('.field-name').value.trim();
+    if (name) {
+      fields.push({
+        name:         name,
+        unit:         row.querySelector('.field-unit').value.trim(),
+        normal_range: row.querySelector('.field-range').value.trim(),
+        field_type:   row.querySelector('.field-type').value,
+      });
+    }
+  });
+  document.getElementById('fieldsJsonInput').value = JSON.stringify(fields);
+}
+
+function quickAdd(panel) {
+  const panelFields = PANELS[panel] || [];
+  const existing = Array.from(
+    document.getElementById('fieldsContainer').querySelectorAll('.field-name')
+  ).map(el => el.value.trim().toLowerCase());
+  panelFields.forEach(f => {
+    if (!existing.includes(f.name.toLowerCase())) addField(f);
+  });
+}
+
+/* Safely escape a value for use inside an HTML attribute */
+function escAttr(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/* Close modal on backdrop click */
+document.getElementById('builderOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeBuilder();
+});
+
+/* Validate before submit */
+document.getElementById('templateForm').addEventListener('submit', function(e) {
+  syncJson();
+  const raw = document.getElementById('fieldsJsonInput').value || '[]';
+  let fields = [];
+  try { fields = JSON.parse(raw); } catch(_) {}
+  if (!fields.length) {
+    e.preventDefault();
+    alert('Please add at least one parameter before saving.');
+    return;
+  }
+  if (fields.some(f => !f.name.trim())) {
+    e.preventDefault();
+    alert('Every parameter must have a name.');
+  }
+});
+</script>
+{% endblock %}

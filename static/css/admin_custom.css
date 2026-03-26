@@ -1,0 +1,361 @@
+/*
+ * AbiCare Hospital EHR — Custom Admin CSS
+ * =========================================
+ * Loaded by Jazzmin via JAZZMIN_SETTINGS["custom_css"].
+ * Enhances and re-skins the admin panel to match AbiCare branding.
+ * File path in project: static/css/admin_custom.css
+ */
+
+/* ── Google Fonts in Admin ───────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+/* ── CSS Variables ───────────────────────────────────────────────── */
+:root {
+  --abi-primary:       #0A5C8A;
+  --abi-primary-dark:  #074266;
+  --abi-accent:        #00C49A;
+  --abi-sidebar:       #06304A;
+  --abi-font-display:  'Playfair Display', Georgia, serif;
+  --abi-font-body:     'DM Sans', -apple-system, sans-serif;
+}
+
+/* ── Global font override ────────────────────────────────────────── */
+body,
+.main-header,
+.sidebar,
+.content-wrapper,
+.main-footer {
+  font-family: var(--abi-font-body) !important;
+}
+
+/* ── Navbar brand ────────────────────────────────────────────────── */
+.navbar-brand {
+  font-family: var(--abi-font-display) !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+}
+
+/* ── Sidebar nav links ───────────────────────────────────────────── */
+.nav-sidebar .nav-link {
+  border-radius: 6px !important;
+  margin: 2px 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s !important;
+}
+.nav-sidebar .nav-link.active,
+.nav-sidebar .nav-link:hover {
+  background: rgba(0, 196, 154, 0.15) !important;
+  color: #fff !important;
+}
+.nav-sidebar .nav-link.active {
+  border-left: 3px solid var(--abi-accent) !important;
+}
+
+/* ── Page headings ───────────────────────────────────────────────── */
+.content-header h1,
+.card-title {
+  font-family: var(--abi-font-display) !important;
+  font-weight: 700 !important;
+  color: var(--abi-primary) !important;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────── */
+.card {
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 12px rgba(10, 92, 138, 0.07) !important;
+}
+.card-header {
+  border-radius: 10px 10px 0 0 !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  font-weight: 600 !important;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--abi-primary) !important;
+  border-color: var(--abi-primary) !important;
+  border-radius: 20px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s !important;
+}
+.btn-primary:hover {
+  background: var(--abi-primary-dark) !important;
+  border-color: var(--abi-primary-dark) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(10, 92, 138, 0.3) !important;
+}
+.btn-success {
+  border-radius: 20px !important;
+  font-weight: 600 !important;
+  background: var(--abi-accent) !important;
+  border-color: var(--abi-accent) !important;
+}
+.btn-warning, .btn-danger, .btn-info, .btn-secondary {
+  border-radius: 20px !important;
+  font-weight: 600 !important;
+}
+
+/* ── Table styling ────────────────────────────────────────────────── */
+#result_list {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+#result_list thead th {
+  background: #F0F4F8 !important;
+  color: #718096 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  border-bottom: 2px solid #E2E8F0 !important;
+}
+#result_list tbody tr:hover {
+  background: rgba(10, 92, 138, 0.03) !important;
+}
+#result_list tbody tr td {
+  vertical-align: middle !important;
+  font-size: 13.5px !important;
+}
+
+/* ── Changeform ───────────────────────────────────────────────────── */
+.change-form .fieldBox input,
+.change-form .fieldBox select,
+.change-form .fieldBox textarea {
+  border: 1.5px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  font-family: var(--abi-font-body) !important;
+  font-size: 14px !important;
+  padding: 8px 12px !important;
+  transition: all 0.2s !important;
+}
+.change-form .fieldBox input:focus,
+.change-form .fieldBox select:focus,
+.change-form .fieldBox textarea:focus {
+  border-color: var(--abi-primary) !important;
+  box-shadow: 0 0 0 3px rgba(10, 92, 138, 0.1) !important;
+  outline: none !important;
+}
+
+/* ── Module (fieldset) headers ───────────────────────────────────── */
+.module h2,
+.module caption {
+  background: linear-gradient(90deg, var(--abi-primary), var(--abi-primary-dark)) !important;
+  border-radius: 8px 8px 0 0 !important;
+  font-family: var(--abi-font-body) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  padding: 10px 16px !important;
+}
+
+/* ── Dashboard stats ─────────────────────────────────────────────── */
+.info-box {
+  border-radius: 10px !important;
+  box-shadow: 0 2px 12px rgba(10, 92, 138, 0.08) !important;
+  transition: all 0.2s !important;
+}
+.info-box:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(10, 92, 138, 0.15) !important;
+}
+.info-box-icon {
+  border-radius: 10px 0 0 10px !important;
+}
+
+/* ── Breadcrumb ───────────────────────────────────────────────────── */
+.breadcrumb {
+  background: transparent !important;
+  font-size: 13px !important;
+}
+.breadcrumb-item a {
+  color: var(--abi-primary) !important;
+  text-decoration: none !important;
+}
+.breadcrumb-item a:hover {
+  text-decoration: underline !important;
+}
+
+/* ── Search input ─────────────────────────────────────────────────── */
+#searchbar {
+  border: 1.5px solid #E2E8F0 !important;
+  border-radius: 20px !important;
+  padding: 6px 16px !important;
+  font-family: var(--abi-font-body) !important;
+  transition: all 0.2s !important;
+}
+#searchbar:focus {
+  border-color: var(--abi-primary) !important;
+  box-shadow: 0 0 0 3px rgba(10, 92, 138, 0.1) !important;
+  outline: none !important;
+}
+
+/* ── Filter sidebar ───────────────────────────────────────────────── */
+#changelist-filter {
+  border-radius: 10px !important;
+  border: 1px solid #E2E8F0 !important;
+  overflow: hidden !important;
+}
+#changelist-filter h2 {
+  background: var(--abi-primary) !important;
+  font-family: var(--abi-font-body) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  padding: 10px 14px !important;
+  color: #fff !important;
+  border-radius: 0 !important;
+}
+#changelist-filter h3 {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.07em !important;
+  color: #718096 !important;
+  padding: 10px 14px 4px !important;
+}
+#changelist-filter li.selected a {
+  color: var(--abi-accent) !important;
+  font-weight: 700 !important;
+}
+
+/* ── Inline admin tables ──────────────────────────────────────────── */
+.inline-group {
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  border: 1px solid #E2E8F0 !important;
+}
+.inline-group h2 {
+  background: linear-gradient(90deg, var(--abi-accent), #009E7C) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  padding: 10px 16px !important;
+}
+
+/* ── Messages / alerts ────────────────────────────────────────────── */
+.messagelist li {
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  margin-bottom: 8px !important;
+}
+.messagelist li.success { background: rgba(56, 161, 105, 0.1) !important; border-left: 4px solid #38A169 !important; color: #276749 !important; }
+.messagelist li.error   { background: rgba(229, 62, 62, 0.08) !important;  border-left: 4px solid #E53E3E !important; color: #9B2C2C !important; }
+.messagelist li.warning { background: rgba(214, 158, 46, 0.1) !important; border-left: 4px solid #D69E2E !important; color: #744210 !important; }
+
+/* ── Pagination ───────────────────────────────────────────────────── */
+.paginator a,
+.paginator .this-page {
+  border-radius: 6px !important;
+  padding: 4px 10px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+.paginator a {
+  color: var(--abi-primary) !important;
+  border: 1px solid #E2E8F0 !important;
+  text-decoration: none !important;
+  transition: all 0.2s !important;
+}
+.paginator a:hover {
+  background: var(--abi-primary) !important;
+  color: #fff !important;
+  border-color: var(--abi-primary) !important;
+}
+.paginator .this-page {
+  background: var(--abi-primary) !important;
+  color: #fff !important;
+}
+
+/* ── Action bar ────────────────────────────────────────────────────── */
+.actions {
+  background: #F7FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 8px 14px !important;
+  margin-bottom: 12px !important;
+}
+.actions select {
+  border-radius: 20px !important;
+  border: 1.5px solid #E2E8F0 !important;
+  font-size: 13px !important;
+  padding: 4px 10px !important;
+}
+.actions button {
+  border-radius: 20px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 5px 16px !important;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────── */
+.main-footer {
+  font-size: 12px !important;
+  color: #718096 !important;
+  border-top: 1px solid #E2E8F0 !important;
+}
+
+/* ── Date hierarchy ────────────────────────────────────────────────── */
+.xfull {
+  font-size: 13px !important;
+}
+.date-hierarchy a {
+  color: var(--abi-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* ── Object tools ────────────────────────────────────────────────── */
+.object-tools a {
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  padding: 6px 14px !important;
+  background: var(--abi-accent) !important;
+  transition: all 0.2s !important;
+}
+.object-tools a:hover {
+  background: #009E7C !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ── Related widget popup buttons ───────────────────────────────── */
+.related-widget-wrapper .add-another {
+  color: var(--abi-accent) !important;
+  font-weight: 700 !important;
+}
+
+/* ── Tab navigation (for changeform_format: horizontal_tabs) ──── */
+.nav-tabs .nav-link.active {
+  border-bottom: 3px solid var(--abi-accent) !important;
+  color: var(--abi-primary) !important;
+  font-weight: 700 !important;
+}
+.nav-tabs .nav-link {
+  color: #718096 !important;
+  font-weight: 500 !important;
+  transition: all 0.2s !important;
+}
+.nav-tabs .nav-link:hover {
+  color: var(--abi-primary) !important;
+}
+
+/* ── Image thumbnails in list view ──────────────────────────────── */
+.field-photo_thumb img,
+.field-avatar_preview img {
+  border-radius: 50% !important;
+  border: 2px solid #E2E8F0 !important;
+  transition: transform 0.2s !important;
+}
+.field-photo_thumb img:hover,
+.field-avatar_preview img:hover {
+  transform: scale(1.2) !important;
+}
+
+/* ── Responsive tweaks ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .content-header h1 { font-size: 20px !important; }
+  .card { margin-bottom: 16px !important; }
+}

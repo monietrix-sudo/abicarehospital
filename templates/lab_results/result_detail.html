@@ -1,0 +1,188 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>{{ result.template.name|default:"Lab Result" }}</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'lab_results:list' %}">Lab Results</a> ›
+      {{ result.patient.hospital_number }}
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="{% url 'lab_results:list' %}" class="btn-abi-outline"><i class="fas fa-arrow-left"></i> Back</a>
+    {% if result.status == 'ready' and user.can_prescribe %}
+    <form method="post" action="{% url 'lab_results:release' result.pk %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn-abi-accent" onclick="return confirm('Release this result so the patient can see it?')">
+        <i class="fas fa-share"></i> Release to Patient
+      </button>
+    </form>
+    {% endif %}
+    {% if result.status == 'pending' %}
+    <a href="{% url 'lab_results:fill' result.pk %}" class="btn-abi-primary"><i class="fas fa-edit"></i> Fill Result</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Result values -->
+  <div class="col-lg-8">
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-flask" style="color:var(--primary);"></i>
+        <h2>Test Results — {{ result.template.name|default:"Unknown" }}</h2>
+        <span class="badge-abi ms-auto
+          {% if result.status == 'released' %}badge-success
+          {% elif result.status == 'ready' %}badge-warning
+          {% elif result.status == 'pending' %}badge-muted
+          {% else %}badge-accent{% endif %}"
+          style="font-size:13px;padding:5px 14px;">
+          {{ result.get_status_display }}
+        </span>
+      </div>
+      <div class="card-body-abi" style="padding:0;">
+        {% if result.template and result.template.is_pdf_based and pdf_url %}
+        <!-- PDF-based result: show annotated PDF viewer -->
+        <div style="position:relative;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;">
+          <div style="background:#2D3748;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;">
+            <i class="fas fa-file-pdf" style="color:#FC8181;"></i>
+            Annotated Lab Form
+            {% if result.status != 'released' %}
+            <a href="{% url 'lab_results:annotate' result.pk %}" style="margin-left:auto;float:right;background:rgba(255,255,255,.12);color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;text-decoration:none;">
+              <i class="fas fa-edit"></i> Edit Annotations
+            </a>
+            {% endif %}
+          </div>
+          <div style="position:relative;">
+            <iframe src="{{ pdf_url }}" style="width:100%;height:700px;border:none;" title="Lab Form"></iframe>
+          </div>
+        </div>
+        {% if annotations %}
+        <div style="padding:14px 20px;border-top:1px solid var(--border);background:var(--bg-page);">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;">Recorded Values ({{ annotations|length }} entries)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            {% for ann in annotations %}
+            {% if ann.text %}
+            <span style="background:#fff;border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:13px;">{{ ann.text }}</span>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      {% elif field_data %}
+        <table class="table-abi">
+          <thead>
+            <tr>
+              <th>Test Parameter</th>
+              <th>Result</th>
+              <th>Unit</th>
+              <th>Normal Range</th>
+              <th>Flag</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for field in field_data %}
+            <tr>
+              <td style="font-weight:600;font-size:14px;">{{ field.name }}</td>
+              <td style="font-weight:700;font-size:16px;color:var(--primary);">{{ field.value }}</td>
+              <td style="font-size:13px;color:var(--text-muted);">{{ field.unit }}</td>
+              <td style="font-size:13px;">{{ field.normal_range|default:"—" }}</td>
+              <td>
+                {% if field.value and field.value != '—' and field.normal_range %}
+                  <!-- Visual flag placeholder — extend with actual range parsing if needed -->
+                  <span style="color:var(--text-muted);font-size:12px;">—</span>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="padding:48px;text-align:center;color:var(--text-muted);">
+          <i class="fas fa-clipboard" style="font-size:40px;opacity:0.2;display:block;margin-bottom:12px;"></i>
+          No result values entered yet.
+          {% if user.is_lab_tech or user.is_admin_staff or user.is_doctor %}
+          <br /><br />
+          <a href="{% url 'lab_results:fill' result.pk %}" class="btn-abi-primary" style="display:inline-flex;">
+            <i class="fas fa-edit"></i> Fill Result Values
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Doctor notes -->
+        {% if result.notes %}
+        <div style="padding:16px 22px;border-top:1px solid var(--border);background:rgba(10,92,138,0.03);">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:6px;">Doctor's Interpretation</div>
+          <div style="font-size:14px;">{{ result.notes }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Meta panel -->
+  <div class="col-lg-4">
+    <div class="card-abi">
+      <div class="card-header-abi"><h2>Result Information</h2></div>
+      <div class="card-body-abi">
+        <dl style="font-size:14px;display:grid;gap:12px;">
+          <div>
+            <dt style="color:var(--text-muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Patient</dt>
+            <dd style="font-weight:600;margin-top:2px;">
+              <a href="{% url 'patient_detail:detail' result.patient.hospital_number %}" style="color:var(--primary);text-decoration:none;">
+                {{ result.patient.full_name }}
+              </a>
+            </dd>
+          </div>
+          <div>
+            <dt style="color:var(--text-muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Hospital Number</dt>
+            <dd style="font-family:monospace;color:var(--primary);margin-top:2px;">{{ result.patient.hospital_number }}</dd>
+          </div>
+          <div>
+            <dt style="color:var(--text-muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Test Category</dt>
+            <dd style="margin-top:2px;"><span class="badge-abi badge-primary">{{ result.template.get_category_display|default:"—" }}</span></dd>
+          </div>
+          <div>
+            <dt style="color:var(--text-muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Result Date</dt>
+            <dd style="font-weight:600;margin-top:2px;">{{ result.result_date|date:"F j, Y" }}</dd>
+          </div>
+          <div>
+            <dt style="color:var(--text-muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Ordered By</dt>
+            <dd style="margin-top:2px;">Dr. {{ result.ordered_by.get_full_name|default:"—" }}</dd>
+          </div>
+          {% if result.processed_by %}
+          <div>
+            <dt style="color:var(--text-muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Processed By</dt>
+            <dd style="margin-top:2px;">{{ result.processed_by.get_full_name }}</dd>
+          </div>
+          {% endif %}
+          {% if result.released_by %}
+          <div>
+            <dt style="color:var(--text-muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Released By</dt>
+            <dd style="margin-top:2px;">{{ result.released_by.get_full_name }} <br /><span style="font-size:11px;color:var(--text-muted);">{{ result.released_at|date:"M d, Y g:i A" }}</span></dd>
+          </div>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+
+    <!-- Add notes (doctor/admin) -->
+    {% if user.can_prescribe and result.status in 'ready,released,amended' %}
+    <div class="card-abi mt-3">
+      <div class="card-header-abi"><h2>Add/Update Notes</h2></div>
+      <div class="card-body-abi">
+        <form method="post" action="{% url 'lab_results:release' result.pk %}" class="form-abi">
+          {% csrf_token %}
+          <textarea name="notes" class="form-control" rows="4" placeholder="Doctor's interpretation…">{{ result.notes }}</textarea>
+          <button type="submit" class="btn-abi-primary mt-3" style="width:100%;justify-content:center;">
+            <i class="fas fa-save"></i> Save Notes{% if result.status == 'ready' %} & Release{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

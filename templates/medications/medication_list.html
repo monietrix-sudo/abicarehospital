@@ -1,0 +1,39 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Medications</h1>
+    <div class="breadcrumb-abi"><a href="{% url 'patients:dashboard' %}">Dashboard</a> › Medications</div>
+  </div>
+</div>
+<div class="card-abi">
+  <div class="card-body-abi" style="padding:0;">
+    {% if schedules %}
+    <table class="table-abi">
+      <thead>
+        <tr><th>Patient</th><th>Drug</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>Prescribed By</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for sched in schedules %}
+        <tr>
+          <td><a href="{% url 'patient_detail:detail' sched.patient.hospital_number %}" style="font-weight:600;color:var(--primary);text-decoration:none;">{{ sched.patient.full_name }}</a></td>
+          <td style="font-weight:600;">{{ sched.drug_name }}</td>
+          <td>{{ sched.dosage }}</td>
+          <td>{{ sched.get_frequency_display }}</td>
+          <td style="font-size:13px;">{{ sched.start_date|date:"M d" }} – {{ sched.end_date|date:"M d, Y" }}</td>
+          <td>Dr. {{ sched.prescribed_by.get_full_name|default:"—" }}</td>
+          <td><span class="badge-abi {% if sched.is_active %}badge-success{% else %}badge-muted{% endif %}">{% if sched.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+          <td><a href="{% url 'medications:timetable' sched.pk %}" class="btn-abi-primary" style="padding:6px 14px;font-size:12px;">Timetable</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="padding:60px;text-align:center;color:var(--text-muted);">
+      <i class="fas fa-pills" style="font-size:48px;opacity:0.2;display:block;margin-bottom:16px;"></i>
+      <div style="font-size:18px;font-weight:600;">No medications found</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

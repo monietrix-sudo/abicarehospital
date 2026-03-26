@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check In — AbiCare Hospital</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:#06304A;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+    .card{background:#fff;border-radius:20px;width:100%;max-width:500px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.4);}
+    .card-top{background:linear-gradient(135deg,#06304A,#0A5C8A);padding:36px;text-align:center;}
+    .card-top h1{font-family:'Playfair Display',serif;font-size:28px;color:#fff;margin-bottom:6px;}
+    .card-top p{color:rgba(255,255,255,.7);font-size:15px;}
+    .card-body{padding:36px;}
+    .success-number{font-size:96px;font-weight:800;color:#0A5C8A;line-height:1;text-align:center;margin:16px 0;}
+    label{display:block;font-size:14px;font-weight:600;color:#2D3748;margin-bottom:8px;}
+    input{width:100%;padding:14px 16px;border:2px solid #E2E8F0;border-radius:12px;font-size:20px;font-family:inherit;text-align:center;text-transform:uppercase;letter-spacing:.1em;outline:none;transition:all .2s;}
+    input:focus{border-color:#0A5C8A;box-shadow:0 0 0 3px rgba(10,92,138,.1);}
+    .btn{width:100%;padding:16px;background:linear-gradient(135deg,#0A5C8A,#074266);color:#fff;border:none;border-radius:12px;font-size:18px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:16px;transition:all .2s;}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(10,92,138,.35);}
+    .error{background:#FFF5F5;border:1px solid #FED7D7;border-left:4px solid #E53E3E;border-radius:8px;padding:14px;margin-bottom:20px;font-size:14px;color:#9B2C2C;}
+    .success-box{background:#F0FFF4;border:2px solid #9AE6B4;border-radius:14px;padding:28px;text-align:center;}
+    .badge-num{display:inline-flex;align-items:center;justify-content:center;width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#0A5C8A,#00C49A);color:#fff;font-size:52px;font-weight:800;margin:0 auto 16px;}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="card-top">
+    <div style="font-size:48px;margin-bottom:12px;">🏥</div>
+    <h1>Patient Check-In</h1>
+    <p>Enter your hospital number to join the queue</p>
+  </div>
+  <div class="card-body">
+
+    {% if success %}
+    <div class="success-box">
+      <div class="badge-num">{{ entry.queue_number }}</div>
+      <div style="font-size:22px;font-weight:800;color:#276749;margin-bottom:8px;">
+        You're checked in!
+      </div>
+      <div style="font-size:16px;color:#2D3748;margin-bottom:4px;">
+        Welcome, <strong>{{ patient.first_name }}</strong>
+      </div>
+      <div style="font-size:15px;color:#718096;">
+        Your queue number is <strong style="color:#0A5C8A;">#{{ entry.queue_number }}</strong>.
+        Please take a seat and wait to be called.
+      </div>
+      <a href="{% url 'queue:self_checkin' %}"
+         style="display:inline-block;margin-top:20px;background:#EBF4FF;color:#0A5C8A;
+                padding:10px 24px;border-radius:20px;font-weight:700;text-decoration:none;font-size:14px;">
+        ← New Check-in
+      </a>
+    </div>
+
+    {% elif already_checked_in %}
+    <div class="success-box" style="background:#FFFBEB;border-color:#F6E05E;">
+      <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+      <div style="font-size:18px;font-weight:700;color:#744210;margin-bottom:8px;">Already in queue</div>
+      <div style="font-size:15px;color:#744210;">
+        Your number is <strong>#{{ entry.queue_number }}</strong>. Status: <strong>{{ entry.get_status_display }}</strong>.
+      </div>
+    </div>
+
+    {% elif error %}
+    <div class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+    <form method="post">
+      {% csrf_token %}
+      <label>Hospital Number</label>
+      <input type="text" name="hospital_number" placeholder="ABI-2024-00001" autofocus />
+      <button type="submit" class="btn"><i class="fas fa-sign-in-alt"></i> Check In</button>
+    </form>
+
+    {% else %}
+    <form method="post">
+      {% csrf_token %}
+      <label>Hospital Number</label>
+      <input type="text" name="hospital_number" placeholder="ABI-2024-00001" autofocus
+             style="margin-bottom:0;" />
+      <div style="font-size:12px;color:#718096;margin-top:6px;text-align:center;">
+        Found on your patient card or registration slip
+      </div>
+      <button type="submit" class="btn">
+        <i class="fas fa-sign-in-alt"></i> Check In
+      </button>
+    </form>
+    {% endif %}
+
+  </div>
+</div>
+</body>
+</html>

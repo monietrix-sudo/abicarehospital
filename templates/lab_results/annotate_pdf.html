@@ -1,0 +1,701 @@
+{% extends "base/base.html" %}
+{% block title %}Fill Lab Form — {{ result.patient.full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Annotator layout */
+  .annotator-shell {
+    display: flex;
+    gap: 0;
+    height: calc(100vh - 130px);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(10,92,138,0.12);
+    border: 1px solid var(--border);
+  }
+
+  /* Left: PDF canvas area */
+  .pdf-canvas-area {
+    flex: 1;
+    background: #525659;
+    overflow: auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    gap: 16px;
+  }
+
+  /* Page wrapper — positions annotations over canvas */
+  .pdf-page-wrapper {
+    position: relative;
+    display: inline-block;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    cursor: crosshair;
+  }
+  .pdf-page-wrapper canvas {
+    display: block;
+  }
+
+  /* Text annotation boxes */
+  .ann-box {
+    position: absolute;
+    border: 2px dashed #0A5C8A;
+    background: rgba(255,255,255,0.92);
+    border-radius: 3px;
+    cursor: move;
+    box-sizing: border-box;
+    min-width: 40px;
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+  }
+  .ann-box:focus-within { border-color: #00C49A; box-shadow: 0 0 0 3px rgba(0,196,154,0.25); }
+  .ann-box.selected { border-color: #E53E3E; border-style: solid; }
+  .ann-box input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    padding: 2px 4px;
+    color: #000;
+  }
+  .ann-box .ann-delete {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 20px;
+    height: 20px;
+    background: #E53E3E;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 10px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    z-index: 10;
+  }
+  .ann-box.selected .ann-delete { display: flex; }
+  .ann-resize {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 10px;
+    height: 10px;
+    background: #0A5C8A;
+    border-radius: 2px;
+    cursor: se-resize;
+    display: none;
+  }
+  .ann-box.selected .ann-resize { display: block; }
+
+  /* Right: sidebar */
+  .ann-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: #fff;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .ann-sidebar-header {
+    padding: 16px 18px;
+    background: linear-gradient(135deg,#06304A,#0A5C8A);
+    color: #fff;
+  }
+  .ann-sidebar-header h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .ann-sidebar-header p { font-size:11px; opacity:.75; }
+  .ann-sidebar-body { flex:1; overflow-y:auto; padding:16px; }
+  .ann-sidebar-footer { padding:14px 16px; border-top:1px solid var(--border); }
+
+  .tool-btn {
+    width: 100%;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    transition: all .2s;
+    color: var(--text-primary);
+  }
+  .tool-btn:hover { background: #F0F4F8; border-color: var(--primary); color: var(--primary); }
+  .tool-btn.active { background: #EBF4FF; border-color: var(--primary); color: var(--primary); }
+
+  .prop-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:4px; }
+  .prop-section { margin-bottom:16px; }
+
+  .ann-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    background: #F7FAFC;
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .ann-list-item:hover { background: #EBF4FF; }
+  .ann-list-item.selected { background: #EBF4FF; border-color: var(--primary); }
+  .ann-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    margin-left: auto;
+  }
+
+  .mode-indicator {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,92,138,0.92);
+    color: #fff;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 999;
+    display: none;
+  }
+
+  /* Toolbar top strip */
+  .pdf-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: #2D3748;
+    color: #fff;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+  .pdf-toolbar button {
+    background: rgba(255,255,255,.12);
+    border: none;
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .pdf-toolbar button:hover { background: rgba(255,255,255,.22); }
+  .pdf-toolbar .page-info { margin: 0 8px; font-size: 12px; opacity: .7; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:12px;">
+  <div class="page-header-left">
+    <h1>Fill Lab Form</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'lab_results:list' %}">Lab Results</a> ›
+      {{ result.template.name }} — {{ result.patient.full_name }}
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="{% url 'lab_results:list' %}" class="btn-abi-outline">
+      <i class="fas fa-times"></i> Cancel
+    </a>
+    <button id="saveBtn" class="btn-abi-primary" onclick="saveAnnotations()">
+      <i class="fas fa-save"></i> Save &amp; Submit
+    </button>
+  </div>
+</div>
+
+<!-- Patient banner -->
+<div style="background:linear-gradient(90deg,rgba(10,92,138,.07),rgba(0,196,154,.05));border:1px solid var(--border);border-radius:10px;padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+  <div style="font-weight:700;font-size:14px;">{{ result.patient.full_name }}</div>
+  <div style="font-size:12px;color:var(--text-muted);">{{ result.patient.hospital_number }}</div>
+  <div style="font-size:12px;color:var(--text-muted);">{{ result.template.name }}</div>
+  <div style="font-size:12px;color:var(--text-muted);">{{ result.result_date|date:"M d, Y" }}</div>
+  <span id="statusPill" style="margin-left:auto;background:#FFFBEB;border:1px solid #F6E05E;color:#744210;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700;">
+    Unsaved changes
+  </span>
+</div>
+
+<!-- Main annotator shell -->
+<div class="annotator-shell">
+
+  <!-- PDF area -->
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#525659;">
+
+    <!-- Top toolbar -->
+    <div class="pdf-toolbar">
+      <button onclick="prevPage()"><i class="fas fa-chevron-left"></i></button>
+      <span class="page-info">Page <span id="pageNum">1</span> of <span id="pageCount">—</span></span>
+      <button onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
+      <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 4px;"></div>
+      <button onclick="zoom(-0.2)"><i class="fas fa-search-minus"></i></button>
+      <button onclick="zoom(0.2)"><i class="fas fa-search-plus"></i></button>
+      <span class="page-info" id="zoomLabel">100%</span>
+      <div style="flex:1;"></div>
+      <span style="font-size:11px;opacity:.6;">
+        <i class="fas fa-mouse-pointer"></i> Click on the document to place a text box
+      </span>
+    </div>
+
+    <!-- Canvas scroll area -->
+    <div class="pdf-canvas-area" id="pdfArea">
+      <div id="pdfLoading" style="color:#fff;font-size:15px;margin-top:60px;">
+        <i class="fas fa-spinner fa-spin"></i> Loading PDF…
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Sidebar -->
+  <div class="ann-sidebar">
+    <div class="ann-sidebar-header">
+      <h3><i class="fas fa-list-ul"></i> Annotations</h3>
+      <p>Click on the PDF to add a text box</p>
+    </div>
+    <div class="ann-sidebar-body">
+
+      <!-- Selected box properties -->
+      <div id="propPanel" style="display:none;">
+        <div class="prop-section">
+          <div class="prop-label">Selected Box</div>
+          <div class="prop-section">
+            <div class="prop-label" style="margin-top:8px;">Font Size</div>
+            <input type="range" id="propFontSize" min="8" max="28" value="12"
+                   oninput="updateSelectedProp('fontSize', parseInt(this.value)); document.getElementById('propFontSizeVal').textContent = this.value+'px'"
+                   style="width:100%;" />
+            <span id="propFontSizeVal" style="font-size:11px;color:var(--text-muted);">12px</span>
+          </div>
+          <div class="prop-section">
+            <div class="prop-label">Text Colour</div>
+            <input type="color" id="propColor" value="#000000"
+                   oninput="updateSelectedProp('color', this.value)"
+                   style="width:100%;height:34px;border-radius:6px;border:1px solid var(--border);cursor:pointer;" />
+          </div>
+          <div class="prop-section">
+            <div class="prop-label">Background</div>
+            <div style="display:flex;gap:6px;">
+              <button onclick="updateSelectedProp('bg','transparent')" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);font-size:11px;cursor:pointer;background:transparent;">None</button>
+              <button onclick="updateSelectedProp('bg','rgba(255,255,255,0.92)')" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);font-size:11px;cursor:pointer;background:#fff;">White</button>
+              <button onclick="updateSelectedProp('bg','rgba(255,255,200,0.95)')" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);font-size:11px;cursor:pointer;background:#ffffc8;">Yellow</button>
+            </div>
+          </div>
+          <button onclick="deleteSelected()" style="width:100%;padding:7px;background:#FFF5F5;border:1px solid #FED7D7;color:#E53E3E;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:4px;">
+            <i class="fas fa-trash-alt"></i> Delete Selected
+          </button>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;" />
+      </div>
+
+      <!-- Box list -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="prop-label" style="margin:0;">All Boxes (<span id="boxCount">0</span>)</div>
+          <button onclick="clearAll()" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;">Clear all</button>
+        </div>
+        <div id="annList"></div>
+        <div id="annListEmpty" style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px;">
+          <i class="fas fa-mouse-pointer" style="font-size:22px;opacity:.3;display:block;margin-bottom:6px;"></i>
+          Click anywhere on the PDF to add a text box
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div style="margin-top:16px;">
+        <div class="prop-label">Lab Tech Notes</div>
+        <textarea id="techNotes" class="form-control" rows="3"
+                  placeholder="Any observations or comments…"
+                  style="font-size:13px;">{{ result.notes }}</textarea>
+      </div>
+
+    </div>
+    <div class="ann-sidebar-footer">
+      <button id="saveBtn2" onclick="saveAnnotations()" class="btn-abi-primary" style="width:100%;justify-content:center;">
+        <i class="fas fa-save"></i> Save &amp; Submit for Review
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Mode indicator toast -->
+<div class="mode-indicator" id="modeIndicator"></div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── State ──────────────────────────────────────────────────────────
+const PDF_URL        = "{{ pdf_url }}";
+const SAVE_URL       = "{{ save_url }}";
+const CSRF_TOKEN     = "{{ csrf_token }}";
+const EXISTING_ANNS  = {{ existing_annotations|safe }};
+
+let pdfDoc     = null;
+let pageNum    = 1;
+let scale      = 1.5;
+let annotations= [];   // [{id,page,x,y,w,h,text,fontSize,color,bg}]
+let selectedId = null;
+let annCounter = 0;
+let pageWrappers = {};  // page number → DOM element
+
+// ── Load PDF ───────────────────────────────────────────────────────
+pdfjsLib.getDocument(PDF_URL).promise.then(pdf => {
+  pdfDoc = pdf;
+  document.getElementById('pageCount').textContent = pdf.numPages;
+  document.getElementById('pdfLoading').remove();
+
+  // Render all pages
+  for (let p = 1; p <= pdf.numPages; p++) renderPage(p);
+
+  // Load existing annotations
+  if (EXISTING_ANNS && EXISTING_ANNS.length) {
+    annotations = EXISTING_ANNS;
+    annCounter  = annotations.reduce((m,a) => Math.max(m, parseInt(a.id.replace('tb',''))||0), 0);
+    setTimeout(redrawAllAnnotations, 600);
+  }
+}).catch(err => {
+  document.getElementById('pdfLoading').innerHTML =
+    '<i class="fas fa-exclamation-circle" style="color:#E53E3E"></i> Failed to load PDF. ' + err.message;
+});
+
+function renderPage(num) {
+  pdfDoc.getPage(num).then(page => {
+    const vp      = page.getViewport({ scale });
+    const canvas  = document.createElement('canvas');
+    canvas.width  = vp.width;
+    canvas.height = vp.height;
+    page.render({ canvasContext: canvas.getContext('2d'), viewport: vp });
+
+    const wrapper = document.createElement('div');
+    wrapper.className    = 'pdf-page-wrapper';
+    wrapper.style.width  = vp.width + 'px';
+    wrapper.style.height = vp.height + 'px';
+    wrapper.dataset.page = num;
+
+    wrapper.appendChild(canvas);
+    document.getElementById('pdfArea').appendChild(wrapper);
+    pageWrappers[num] = wrapper;
+
+    // Click on page → add text box
+    wrapper.addEventListener('click', function(e) {
+      if (e.target !== wrapper && e.target !== canvas) return;
+      const rect = wrapper.getBoundingClientRect();
+      const x    = e.clientX - rect.left;
+      const y    = e.clientY - rect.top;
+      addAnnotation(num, x, y);
+    });
+  });
+}
+
+// ── Add annotation ─────────────────────────────────────────────────
+function addAnnotation(page, x, y, data) {
+  annCounter++;
+  const ann = data || {
+    id:       'tb' + annCounter,
+    page:     page,
+    x:        Math.round(x),
+    y:        Math.round(y),
+    w:        120,
+    h:        28,
+    text:     '',
+    fontSize: 12,
+    color:    '#000000',
+    bg:       'rgba(255,255,255,0.92)',
+  };
+  if (!data) annotations.push(ann);
+  renderAnnotation(ann);
+  selectAnnotation(ann.id);
+  updateSidebar();
+}
+
+// ── Render one annotation box ──────────────────────────────────────
+function renderAnnotation(ann) {
+  const wrapper = pageWrappers[ann.page];
+  if (!wrapper) return;
+
+  // Remove existing element if re-rendering
+  const existing = document.getElementById('ann-' + ann.id);
+  if (existing) existing.remove();
+
+  const box = document.createElement('div');
+  box.className  = 'ann-box';
+  box.id         = 'ann-' + ann.id;
+  box.style.left = ann.x + 'px';
+  box.style.top  = ann.y + 'px';
+  box.style.width  = ann.w + 'px';
+  box.style.height = ann.h + 'px';
+  box.style.background = ann.bg || 'rgba(255,255,255,0.92)';
+
+  const input = document.createElement('input');
+  input.type        = 'text';
+  input.value       = ann.text || '';
+  input.placeholder = 'Type here…';
+  input.style.fontSize = (ann.fontSize || 12) + 'px';
+  input.style.color    = ann.color || '#000000';
+
+  input.addEventListener('input',  () => { ann.text = input.value; updateSidebar(); });
+  input.addEventListener('focus',  () => selectAnnotation(ann.id));
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') input.blur(); });
+
+  // Delete button
+  const del = document.createElement('button');
+  del.className   = 'ann-delete';
+  del.innerHTML   = '×';
+  del.title       = 'Delete';
+  del.addEventListener('click', e => { e.stopPropagation(); deleteAnnotation(ann.id); });
+
+  // Resize handle
+  const resize = document.createElement('div');
+  resize.className = 'ann-resize';
+  makeResizable(box, resize, ann);
+
+  box.appendChild(input);
+  box.appendChild(del);
+  box.appendChild(resize);
+  wrapper.appendChild(box);
+
+  makeDraggable(box, ann);
+  box.addEventListener('click', e => { e.stopPropagation(); selectAnnotation(ann.id); });
+}
+
+// ── Drag ──────────────────────────────────────────────────────────
+function makeDraggable(el, ann) {
+  let startX, startY, startL, startT;
+  el.addEventListener('mousedown', function(e) {
+    if (e.target.classList.contains('ann-delete') ||
+        e.target.classList.contains('ann-resize') ||
+        e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    startX = e.clientX; startY = e.clientY;
+    startL = ann.x;     startT = ann.y;
+    function onMove(e) {
+      ann.x = Math.max(0, startL + e.clientX - startX);
+      ann.y = Math.max(0, startT + e.clientY - startY);
+      el.style.left = ann.x + 'px';
+      el.style.top  = ann.y + 'px';
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+  });
+}
+
+// ── Resize ────────────────────────────────────────────────────────
+function makeResizable(el, handle, ann) {
+  handle.addEventListener('mousedown', function(e) {
+    e.preventDefault(); e.stopPropagation();
+    const startX = e.clientX, startY = e.clientY;
+    const startW = ann.w, startH = ann.h;
+    function onMove(e) {
+      ann.w = Math.max(50, startW + e.clientX - startX);
+      ann.h = Math.max(20, startH + e.clientY - startY);
+      el.style.width  = ann.w + 'px';
+      el.style.height = ann.h + 'px';
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+  });
+}
+
+// ── Select ────────────────────────────────────────────────────────
+function selectAnnotation(id) {
+  selectedId = id;
+  document.querySelectorAll('.ann-box').forEach(b => b.classList.remove('selected'));
+  const el = document.getElementById('ann-' + id);
+  if (el) { el.classList.add('selected'); el.querySelector('input').focus(); }
+  const ann = annotations.find(a => a.id === id);
+  if (ann) {
+    document.getElementById('propFontSize').value    = ann.fontSize || 12;
+    document.getElementById('propFontSizeVal').textContent = (ann.fontSize||12) + 'px';
+    document.getElementById('propColor').value       = ann.color || '#000000';
+    document.getElementById('propPanel').style.display = 'block';
+  }
+  updateSidebar();
+}
+
+function updateSelectedProp(prop, value) {
+  const ann = annotations.find(a => a.id === selectedId);
+  if (!ann) return;
+  ann[prop === 'bg' ? 'bg' : prop] = value;
+  const el = document.getElementById('ann-' + ann.id);
+  if (!el) return;
+  if (prop === 'fontSize') el.querySelector('input').style.fontSize = value + 'px';
+  if (prop === 'color')    el.querySelector('input').style.color = value;
+  if (prop === 'bg')       el.style.background = value;
+}
+
+// ── Delete ────────────────────────────────────────────────────────
+function deleteAnnotation(id) {
+  annotations = annotations.filter(a => a.id !== id);
+  const el = document.getElementById('ann-' + id);
+  if (el) el.remove();
+  if (selectedId === id) { selectedId = null; document.getElementById('propPanel').style.display = 'none'; }
+  updateSidebar();
+}
+function deleteSelected() { if (selectedId) deleteAnnotation(selectedId); }
+function clearAll() {
+  if (!confirm('Remove all ' + annotations.length + ' text boxes?')) return;
+  annotations = [];
+  document.querySelectorAll('.ann-box').forEach(b => b.remove());
+  selectedId = null;
+  document.getElementById('propPanel').style.display = 'none';
+  updateSidebar();
+}
+
+// ── Sidebar list ──────────────────────────────────────────────────
+function updateSidebar() {
+  const list  = document.getElementById('annList');
+  const empty = document.getElementById('annListEmpty');
+  document.getElementById('boxCount').textContent = annotations.length;
+  if (!annotations.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = annotations.map(ann => `
+    <div class="ann-list-item ${ann.id === selectedId ? 'selected' : ''}"
+         onclick="selectAnnotation('${ann.id}')">
+      <i class="fas fa-font" style="color:var(--primary);font-size:11px;"></i>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        ${ann.text || '<span style="color:#A0AEC0;font-style:italic;">empty</span>'}
+      </span>
+      <span style="font-size:10px;color:var(--text-muted);">p.${ann.page}</span>
+    </div>
+  `).join('');
+}
+
+// ── Redraw all (after load) ────────────────────────────────────────
+function redrawAllAnnotations() {
+  annotations.forEach(ann => renderAnnotation(ann));
+  updateSidebar();
+}
+
+// ── Page nav ──────────────────────────────────────────────────────
+function prevPage() {
+  if (pageNum <= 1) return;
+  pageNum--;
+  document.getElementById('pageNum').textContent = pageNum;
+  scrollToPage(pageNum);
+}
+function nextPage() {
+  if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+  pageNum++;
+  document.getElementById('pageNum').textContent = pageNum;
+  scrollToPage(pageNum);
+}
+function scrollToPage(num) {
+  const w = pageWrappers[num];
+  if (w) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Zoom ──────────────────────────────────────────────────────────
+function zoom(delta) {
+  scale = Math.min(3, Math.max(0.5, scale + delta));
+  document.getElementById('zoomLabel').textContent = Math.round(scale * 100 / 1.5) + '%';
+  // Re-render all pages at new scale
+  const area = document.getElementById('pdfArea');
+  area.innerHTML = '<div id="pdfLoading" style="color:#fff;font-size:15px;margin-top:60px;"><i class="fas fa-spinner fa-spin"></i> Re-rendering…</div>';
+  pageWrappers = {};
+  if (pdfDoc) {
+    document.getElementById('pdfLoading').remove();
+    for (let p = 1; p <= pdfDoc.numPages; p++) renderPage(p);
+    setTimeout(redrawAllAnnotations, 500);
+  }
+}
+
+// ── Save ──────────────────────────────────────────────────────────
+async function saveAnnotations() {
+  const btn = document.getElementById('saveBtn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  btn.disabled  = true;
+
+  try {
+    const resp = await fetch(SAVE_URL, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'X-CSRFToken':   CSRF_TOKEN,
+      },
+      body: JSON.stringify({
+        annotations: annotations,
+        notes:       document.getElementById('techNotes').value,
+      }),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      document.getElementById('statusPill').textContent    = '✓ Saved';
+      document.getElementById('statusPill').style.background = '#F0FFF4';
+      document.getElementById('statusPill').style.borderColor = '#9AE6B4';
+      document.getElementById('statusPill').style.color       = '#276749';
+      btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fas fa-save"></i> Save & Submit';
+        btn.disabled  = false;
+        window.location.href = '/lab-results/';
+      }, 1200);
+    } else {
+      throw new Error(data.error || 'Save failed');
+    }
+  } catch (e) {
+    alert('Could not save: ' + e.message);
+    btn.innerHTML = '<i class="fas fa-save"></i> Save & Submit';
+    btn.disabled  = false;
+  }
+}
+
+// Deselect on area click
+document.getElementById('pdfArea').addEventListener('click', function(e) {
+  if (e.target === this) {
+    selectedId = null;
+    document.querySelectorAll('.ann-box').forEach(b => b.classList.remove('selected'));
+    document.getElementById('propPanel').style.display = 'none';
+    updateSidebar();
+  }
+});
+
+// Keyboard: Delete key removes selected
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Delete' || e.key === 'Backspace') &&
+      selectedId &&
+      document.activeElement.tagName !== 'INPUT' &&
+      document.activeElement.tagName !== 'TEXTAREA') {
+    deleteSelected();
+  }
+});
+</script>
+{% endblock %}

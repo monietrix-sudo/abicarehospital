@@ -1,0 +1,16 @@
+# AbiCare Hospital EHR — Python Dependencies
+# Install: pip install -r requirements.txt
+
+Django==5.0.6
+psycopg2-binary==2.9.9
+django-jazzmin==3.0.0
+django-crispy-forms==2.3
+crispy-bootstrap5==2024.2
+django-widget-tweaks==1.5.0
+Pillow==10.3.0
+whitenoise==6.7.0
+gunicorn==22.0.0
+pytesseract==0.3.10
+pdf2image==1.17.0
+twilio==9.0.4
+python-dotenv==1.0.0

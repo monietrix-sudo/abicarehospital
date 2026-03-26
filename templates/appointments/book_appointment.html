@@ -1,0 +1,120 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Book Appointment</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'appointments:list' %}">Appointments</a> › Book
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-8">
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-calendar-plus" style="color:var(--primary);"></i>
+        <h2>New Appointment</h2>
+      </div>
+      <div class="card-body-abi">
+        <form method="post" action="{% url 'appointments:book' %}" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+
+            <div class="col-12">
+              <div class="form-section-title">Patient & Doctor</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Patient *</label>
+              <select name="patient" class="form-select" required>
+                <option value="">— Select Patient —</option>
+                {% for p in patients %}
+                <option value="{{ p.id }}" {% if request.GET.patient == p.id|stringformat:"s" %}selected{% endif %}>
+                  {{ p.full_name }} ({{ p.hospital_number }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Doctor *</label>
+              <select name="doctor" class="form-select" required>
+                <option value="">— Select Doctor —</option>
+                {% for doc in doctors %}
+                <option value="{{ doc.id }}">Dr. {{ doc.get_full_name }}{% if doc.department %} — {{ doc.department }}{% endif %}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-12">
+              <div class="form-section-title">Date & Time</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Date *</label>
+              <input type="date" name="appointment_date" class="form-control" required min="{{ today }}" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Time *</label>
+              <input type="time" name="appointment_time" class="form-control" required />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Duration (minutes)</label>
+              <select name="duration_minutes" class="form-select">
+                <option value="15">15 minutes</option>
+                <option value="30" selected>30 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="60">1 hour</option>
+                <option value="90">1.5 hours</option>
+              </select>
+            </div>
+
+            <div class="col-12">
+              <div class="form-section-title">Appointment Details</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Appointment Type *</label>
+              <select name="appointment_type" class="form-select" id="apptType" required>
+                {% for val, label in type_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Reason for Visit *</label>
+              <textarea name="reason" class="form-control" rows="3" required placeholder="Brief description of the reason for this appointment…"></textarea>
+            </div>
+
+            <!-- Teleconsult link field — shown only when type = teleconsult -->
+            <div class="col-12" id="teleconsultLinkField" style="display:none;">
+              <label class="form-label">Teleconsult Link (Zoom or Google Meet)</label>
+              <input type="url" name="teleconsult_link" class="form-control"
+                     placeholder="https://zoom.us/j/... or https://meet.google.com/..." />
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+                <i class="fas fa-info-circle"></i>
+                Patient cannot join until the doctor explicitly approves access.
+              </div>
+            </div>
+
+            <div class="col-12" style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+              <a href="{% url 'appointments:list' %}" class="btn-abi-outline">Cancel</a>
+              <button type="submit" class="btn-abi-primary"><i class="fas fa-calendar-check"></i> Book Appointment</button>
+            </div>
+
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Show teleconsult link field only when type is 'teleconsult'
+  const apptType = document.getElementById('apptType');
+  const linkField = document.getElementById('teleconsultLinkField');
+  apptType.addEventListener('change', function() {
+    linkField.style.display = this.value === 'teleconsult' ? 'block' : 'none';
+  });
+</script>
+{% endblock %}

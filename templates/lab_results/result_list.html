@@ -1,0 +1,107 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Lab Results</h1>
+    <div class="breadcrumb-abi"><a href="{% url 'patients:dashboard' %}">Dashboard</a> › Lab Results</div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    {% if user.is_admin_staff or user.is_lab_tech %}
+    <a href="{% url 'lab_results:templates' %}" class="btn-abi-outline">
+      <i class="fas fa-file-medical-alt"></i> Manage Templates
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Status filter -->
+<div class="card-abi mb-4">
+  <div class="card-body-abi">
+    <form method="get" class="form-abi">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Filter by Status</label>
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn-abi-primary"><i class="fas fa-filter"></i> Filter</button>
+          <a href="{% url 'lab_results:list' %}" class="btn-abi-outline ms-2">Clear</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card-abi">
+  <div class="card-body-abi" style="padding:0;">
+    {% if page_obj.object_list %}
+    <div style="overflow-x:auto;">
+      <table class="table-abi">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Test</th>
+            <th>Category</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Ordered By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for result in page_obj %}
+          <tr>
+            <td>
+              <div style="font-weight:600;font-size:14px;">{{ result.patient.full_name }}</div>
+              <div style="font-size:11px;color:var(--text-muted);">{{ result.patient.hospital_number }}</div>
+            </td>
+            <td style="font-weight:600;font-size:14px;">{{ result.template.name|default:"—" }}</td>
+            <td><span class="badge-abi badge-primary">{{ result.template.get_category_display|default:"—" }}</span></td>
+            <td style="font-size:14px;">{{ result.result_date|date:"M d, Y" }}</td>
+            <td>
+              <span class="badge-abi
+                {% if result.status == 'released' %}badge-success
+                {% elif result.status == 'ready' %}badge-warning
+                {% elif result.status == 'processing' %}badge-primary
+                {% elif result.status == 'amended' %}badge-accent
+                {% else %}badge-muted{% endif %}">
+                {{ result.get_status_display }}
+              </span>
+            </td>
+            <td style="font-size:13px;">{{ result.ordered_by.get_full_name|default:"—" }}</td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <a href="{% url 'lab_results:detail' result.pk %}" class="btn-abi-primary" style="padding:6px 12px;font-size:12px;">View</a>
+                {% if result.status == 'pending' and user.is_lab_tech or user.is_admin_staff or user.is_doctor %}
+                <a href="{% url 'lab_results:fill' result.pk %}" class="btn-abi-outline" style="padding:6px 12px;font-size:12px;">Fill</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div style="padding:16px 22px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--text-muted);">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <div style="display:flex;gap:6px;">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn-abi-outline" style="padding:6px 12px;font-size:13px;">Prev</a>{% endif %}
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn-abi-primary" style="padding:6px 12px;font-size:13px;">Next</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div style="padding:60px;text-align:center;color:var(--text-muted);">
+      <i class="fas fa-flask" style="font-size:48px;opacity:0.2;display:block;margin-bottom:16px;"></i>
+      <div style="font-size:18px;font-weight:600;">No lab results found</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Notification Settings</h1>
+    <div class="breadcrumb-abi"><a href="{% url 'notifications:list' %}">Notifications</a> › Preferences</div>
+  </div>
+</div>
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-7">
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-sliders-h" style="color:var(--primary);"></i>
+        <h2>How to Receive Notifications</h2>
+      </div>
+      <div class="card-body-abi">
+        <form method="post" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-4">
+            <div class="col-12">
+              <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:12px;">Channels</div>
+              {% for field_name, label, icon, is_checked in channels %}
+              <label style="display:flex;align-items:center;gap:14px;padding:13px 16px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:10px;transition:border-color .2s;">
+                <input type="checkbox" name="{{ field_name }}" {% if is_checked %}checked{% endif %}
+                       style="width:18px;height:18px;accent-color:var(--primary);" />
+                <i class="{{ icon }}" style="color:var(--primary);font-size:18px;width:22px;text-align:center;"></i>
+                <span style="font-weight:600;font-size:14px;">{{ label }}</span>
+              </label>
+              {% endfor %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">WhatsApp Number <span style="font-weight:400;color:var(--text-muted);">(international format e.g. +2348012345678)</span></label>
+              <input type="tel" name="whatsapp_number" class="form-control"
+                     value="{{ prefs.whatsapp_number }}" placeholder="+234..." />
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Requires Twilio configured in .env</div>
+            </div>
+
+            <div class="col-12">
+              <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:12px;">Alert Types</div>
+
+              <label style="display:flex;align-items:center;gap:14px;margin-bottom:14px;cursor:pointer;">
+                <input type="checkbox" name="dose_overdue" {% if prefs.dose_overdue %}checked{% endif %}
+                       style="width:18px;height:18px;accent-color:var(--primary);" />
+                <div>
+                  <div style="font-weight:600;"><i class="fas fa-pills" style="color:#E53E3E;"></i> Overdue Medication Doses</div>
+                  <div style="font-size:12px;color:var(--text-muted);">Alert 30+ minutes after a dose is missed</div>
+                </div>
+              </label>
+
+              <label style="display:flex;align-items:center;gap:14px;margin-bottom:14px;cursor:pointer;">
+                <input type="checkbox" name="appointment_remind" {% if prefs.appointment_remind %}checked{% endif %}
+                       style="width:18px;height:18px;accent-color:var(--primary);" />
+                <div>
+                  <div style="font-weight:600;"><i class="fas fa-calendar-check" style="color:var(--primary);"></i> Appointment Reminders</div>
+                  <div style="font-size:12px;color:var(--text-muted);">24 hours and 1 hour before each appointment</div>
+                </div>
+              </label>
+
+              <label style="display:flex;align-items:center;gap:14px;cursor:pointer;">
+                <input type="checkbox" name="result_released" {% if prefs.result_released %}checked{% endif %}
+                       style="width:18px;height:18px;accent-color:var(--primary);" />
+                <div>
+                  <div style="font-weight:600;"><i class="fas fa-flask" style="color:var(--accent);"></i> Lab Results Released</div>
+                  <div style="font-size:12px;color:var(--text-muted);">Alert when a result is released to a patient</div>
+                </div>
+              </label>
+            </div>
+
+            <div class="col-12" style="display:flex;justify-content:flex-end;">
+              <button type="submit" class="btn-abi-primary"><i class="fas fa-save"></i> Save Preferences</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card-abi mt-4">
+      <div class="card-header-abi"><h2><i class="fas fa-terminal" style="color:var(--primary);"></i> Enabling Automatic Reminders</h2></div>
+      <div class="card-body-abi">
+        <p style="font-size:14px;margin-bottom:14px;">Run this command every 15 minutes to check for overdue doses and send appointment reminders:</p>
+        <div style="background:#1A202C;color:#68D391;padding:14px 18px;border-radius:10px;font-family:monospace;font-size:13px;">python manage.py send_reminders</div>
+        <div style="margin-top:14px;font-size:13px;color:var(--text-muted);">
+          <strong>Windows Task Scheduler:</strong> Create a basic task, trigger every 15 minutes, action = start program → python → with argument <code>manage.py send_reminders</code><br/><br/>
+          <strong>Linux/Mac crontab:</strong><br/>
+          <code style="background:#F7FAFC;padding:4px 8px;border-radius:4px;">*/15 * * * * cd /path/to/abicare_ehr && python manage.py send_reminders</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Upload Medical Record</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'patient_detail:detail' patient.hospital_number %}">{{ patient.full_name }}</a> › Upload Record
+    </div>
+  </div>
+</div>
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-8">
+    <!-- Patient strip -->
+    <div class="card-abi mb-4" style="border-left:4px solid var(--primary);">
+      <div class="card-body-abi">
+        <div style="display:flex;align-items:center;gap:16px;">
+          {% if patient.photo %}<img src="{{ patient.photo.url }}" class="patient-avatar" style="width:48px;height:48px;" />
+          {% else %}<div class="patient-avatar-placeholder" style="width:48px;height:48px;font-size:16px;font-weight:700;">{{ patient.first_name|first }}{{ patient.last_name|first }}</div>{% endif %}
+          <div>
+            <div style="font-size:18px;font-weight:700;">{{ patient.full_name }}</div>
+            <div style="font-size:13px;color:var(--text-muted);">{{ patient.hospital_number }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-abi">
+      <div class="card-header-abi"><i class="fas fa-upload" style="color:var(--primary);"></i><h2>New Record</h2></div>
+      <div class="card-body-abi">
+        <form method="post" enctype="multipart/form-data" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Record Title *</label>
+              <input type="text" name="title" class="form-control" required placeholder="e.g. Chest X-Ray Report, Consultation Note…" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Record Type *</label>
+              <select name="record_type" class="form-select" required>
+                {% for val, label in record_types %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Text Content / Notes</label>
+              <textarea name="body" class="form-control" rows="5" placeholder="Type consultation notes, diagnosis, or summary here…"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Attach File (optional)</label>
+              <input type="file" name="attached_file" class="form-control"
+                     accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.mp4,.webm" />
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                Accepted: Images (JPG/PNG/GIF/WEBP), PDF, Word (.doc/.docx), Video (MP4/WEBM). Max 50MB.
+              </div>
+            </div>
+            {% if appointments %}
+            <div class="col-12">
+              <label class="form-label">Link to Appointment (optional)</label>
+              <select name="appointment_id" class="form-select">
+                <option value="">— Not linked to appointment —</option>
+                {% for appt in appointments %}
+                <option value="{{ appt.pk }}">{{ appt.appointment_date|date:"M d, Y" }} — {{ appt.get_appointment_type_display }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% endif %}
+            <div class="col-12">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:500;">
+                <input type="checkbox" name="is_visible_to_patient" style="width:16px;height:16px;" />
+                Make this record visible to the patient in their portal
+              </label>
+            </div>
+            <div class="col-12" style="display:flex;gap:12px;justify-content:flex-end;">
+              <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-outline">Cancel</a>
+              <button type="submit" class="btn-abi-primary"><i class="fas fa-upload"></i> Upload Record</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

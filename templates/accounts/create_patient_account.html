@@ -1,0 +1,122 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Create Patient Portal Login</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patient_detail:detail' patient.hospital_number %}">{{ patient.full_name }}</a> › Create Login
+    </div>
+  </div>
+  <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-outline">
+    <i class="fas fa-arrow-left"></i> Cancel
+  </a>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-7">
+
+    <!-- Patient summary -->
+    <div class="card-abi mb-4" style="border-left:4px solid var(--accent);">
+      <div class="card-body-abi">
+        <div style="display:flex;align-items:center;gap:16px;">
+          {% if patient.photo %}
+          <img src="{{ patient.photo.url }}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;" />
+          {% else %}
+          <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;">
+            {{ patient.first_name|first }}{{ patient.last_name|first }}
+          </div>
+          {% endif %}
+          <div>
+            <div style="font-size:18px;font-weight:700;">{{ patient.full_name }}</div>
+            <div style="font-size:13px;color:var(--text-muted);">
+              {{ patient.hospital_number }} · {{ patient.age }} yrs
+              {% if patient.email %} · {{ patient.email }}{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-user-shield" style="color:var(--accent);font-size:18px;"></i>
+        <h2>Portal Account Details</h2>
+      </div>
+      <div class="card-body-abi">
+
+        <div style="background:#EBF4FF;border:1px solid #BEE3F8;border-left:4px solid #0A5C8A;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#2C5282;">
+          <i class="fas fa-info-circle"></i>
+          Once created, the patient can log in and view their own records, lab results, medications, and appointments that have been marked visible.
+        </div>
+
+        <form method="post" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Username *</label>
+              <input type="text" name="username" class="form-control" required
+                     value="{{ suggested_username }}"
+                     placeholder="e.g. john.doe or patient001" />
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Must be unique. No spaces allowed.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Password *</label>
+              <div style="position:relative;">
+                <input type="password" name="password1" id="pw1" class="form-control" required
+                       placeholder="Minimum 8 characters" />
+                <button type="button" onclick="toggle('pw1','e1')"
+                        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#718096;cursor:pointer;">
+                  <i class="fas fa-eye" id="e1"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Confirm Password *</label>
+              <div style="position:relative;">
+                <input type="password" name="password2" id="pw2" class="form-control" required
+                       placeholder="Repeat password" />
+                <button type="button" onclick="toggle('pw2','e2')"
+                        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#718096;cursor:pointer;">
+                  <i class="fas fa-eye" id="e2"></i>
+                </button>
+              </div>
+            </div>
+            {% if patient.email %}
+            <div class="col-12">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:500;">
+                <input type="checkbox" name="send_email" checked style="width:16px;height:16px;accent-color:var(--primary);" />
+                Send login details to patient's email ({{ patient.email }})
+              </label>
+            </div>
+            {% else %}
+            <div class="col-12">
+              <div style="background:#FFFBEB;border:1px solid #F6E05E;border-radius:8px;padding:10px 14px;font-size:13px;color:#744210;">
+                <i class="fas fa-exclamation-triangle"></i>
+                No email address on file for this patient. Login details will need to be given in person.
+              </div>
+            </div>
+            {% endif %}
+            <div class="col-12" style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+              <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-outline">Cancel</a>
+              <button type="submit" class="btn-abi-accent">
+                <i class="fas fa-user-plus"></i> Create Portal Account
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggle(inputId, iconId) {
+  const i = document.getElementById(inputId);
+  const ic = document.getElementById(iconId);
+  i.type = i.type === 'password' ? 'text' : 'password';
+  ic.className = i.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+</script>
+{% endblock %}

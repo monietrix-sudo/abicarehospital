@@ -1,0 +1,95 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Version History</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'records:detail' record.pk %}">{{ record.title }}</a> › History
+    </div>
+  </div>
+  <a href="{% url 'records:detail' record.pk %}" class="btn-abi-outline">
+    <i class="fas fa-arrow-left"></i> Back to Record
+  </a>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <!-- Current version -->
+    <div class="card-abi mb-3" style="border-left:4px solid var(--accent);">
+      <div class="card-body-abi">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">
+            v{{ record.version_number }}
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:15px;">{{ record.title }} <span class="badge-abi badge-accent" style="font-size:11px;">Current</span></div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ record.get_record_type_display }} · Last updated {{ record.updated_at|date:"M d, Y g:i A" }}</div>
+          </div>
+          <a href="{% url 'records:detail' record.pk %}" class="btn-abi-primary" style="padding:6px 14px;font-size:12px;">View</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Past versions -->
+    {% if versions %}
+    {% for v in versions %}
+    <div class="card-abi mb-3">
+      <div class="card-body-abi">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#EDF2F7;color:#718096;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">
+            v{{ v.version_num }}
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:15px;">{{ v.title }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">
+              {{ v.get_record_type_display }} ·
+              Edited by {{ v.edited_by.get_full_name|default:"Unknown" }} ·
+              {{ v.edited_at|date:"M d, Y g:i A" }}
+            </div>
+            {% if v.change_note %}
+            <div style="font-size:12px;color:var(--primary);margin-top:4px;">
+              <i class="fas fa-comment-alt"></i> {{ v.change_note }}
+            </div>
+            {% endif %}
+            {% if v.body %}
+            <div style="margin-top:10px;padding:10px 14px;background:#F7FAFC;border-radius:8px;font-size:13px;max-height:80px;overflow:hidden;position:relative;">
+              {{ v.body|truncatewords:30 }}
+              <div style="position:absolute;bottom:0;left:0;right:0;height:30px;background:linear-gradient(transparent,#F7FAFC);"></div>
+            </div>
+            {% endif %}
+          </div>
+          {% if user.is_admin_staff or user.is_doctor %}
+          <form method="post" action="{% url 'records:restore' record.pk v.version_num %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-abi-outline" style="padding:6px 14px;font-size:12px;"
+                    onclick="return confirm('Restore record to version {{ v.version_num }}? Current content will be saved as a new version.')">
+              <i class="fas fa-undo"></i> Restore
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="card-abi">
+      <div class="card-body-abi" style="text-align:center;padding:48px;color:var(--text-muted);">
+        <i class="fas fa-history" style="font-size:40px;opacity:.2;display:block;margin-bottom:12px;"></i>
+        No previous versions. This record has not been edited yet.
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card-abi">
+      <div class="card-header-abi"><h2>About Version History</h2></div>
+      <div class="card-body-abi" style="font-size:14px;color:var(--text-muted);line-height:1.7;">
+        <p>Every time a record is edited, a snapshot of the previous content is saved here.</p>
+        <p style="margin-top:10px;">Only doctors and administrators can restore a record to a previous version. When restored, the current version is also saved first — nothing is ever lost.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

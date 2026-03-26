@@ -1,0 +1,92 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Password Reset Requests</h1>
+    <div class="breadcrumb-abi"><a href="{% url 'patients:dashboard' %}">Dashboard</a> › Password Resets</div>
+  </div>
+  {% if pending %}
+  <span class="badge-abi badge-danger" style="font-size:14px;padding:8px 16px;">
+    {{ pending.count }} Pending
+  </span>
+  {% endif %}
+</div>
+
+{% if pending %}
+<div class="card-abi mb-4">
+  <div class="card-header-abi">
+    <i class="fas fa-clock" style="color:#E53E3E;"></i>
+    <h2>Pending Approval ({{ pending.count }})</h2>
+  </div>
+  <div class="card-body-abi" style="padding:0;">
+    {% for req in pending %}
+    <div style="display:flex;align-items:center;gap:16px;padding:16px 22px;border-bottom:1px solid var(--border);">
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:15px;">{{ req.user.get_full_name|default:req.user.username }}</div>
+        <div style="font-size:12px;color:var(--text-muted);">
+          {{ req.user.username }} · {{ req.user.get_role_display }}
+          {% if req.user.email %} · {{ req.user.email }}{% endif %}
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+          Requested {{ req.requested_at|timesince }} ago
+          {% if req.ip_address %} from {{ req.ip_address }}{% endif %}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <form method="post" action="{% url 'accounts:review_reset' req.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="approve" />
+          <button type="submit" class="btn-abi-accent" style="padding:7px 16px;font-size:13px;">
+            <i class="fas fa-check"></i> Approve &amp; Send Link
+          </button>
+        </form>
+        <form method="post" action="{% url 'accounts:review_reset' req.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="deny" />
+          <button type="submit" style="padding:7px 16px;font-size:13px;background:#FFF5F5;border:1px solid #FED7D7;color:#E53E3E;border-radius:20px;font-weight:600;cursor:pointer;">
+            <i class="fas fa-times"></i> Deny
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="card-abi mb-4">
+  <div class="card-body-abi" style="text-align:center;padding:40px;color:var(--text-muted);">
+    <i class="fas fa-check-circle" style="font-size:36px;color:var(--success);opacity:.5;display:block;margin-bottom:10px;"></i>
+    No pending reset requests.
+  </div>
+</div>
+{% endif %}
+
+{% if history %}
+<div class="card-abi">
+  <div class="card-header-abi"><h2>Recent History</h2></div>
+  <div class="card-body-abi" style="padding:0;">
+    <table class="table-abi">
+      <thead><tr><th>User</th><th>Status</th><th>Requested</th><th>Reviewed By</th></tr></thead>
+      <tbody>
+        {% for req in history %}
+        <tr>
+          <td style="font-weight:600;">{{ req.user.username }}</td>
+          <td>
+            <span class="badge-abi
+              {% if req.status == 'approved' %}badge-success
+              {% elif req.status == 'denied' %}badge-danger
+              {% elif req.status == 'used' %}badge-muted
+              {% else %}badge-warning{% endif %}">
+              {{ req.get_status_display }}
+            </span>
+          </td>
+          <td style="font-size:13px;color:var(--text-muted);">{{ req.requested_at|date:"M d, Y g:i A" }}</td>
+          <td style="font-size:13px;">{{ req.reviewed_by.get_full_name|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

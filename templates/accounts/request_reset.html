@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title>Request Password Reset</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:#06304A;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+    .card{background:#fff;border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);}
+    .card-top{background:linear-gradient(135deg,#06304A,#0A5C8A);padding:32px;text-align:center;}
+    .card-top h1{font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:6px;}
+    .card-top p{font-size:13px;color:rgba(255,255,255,.7);}
+    .card-body{padding:32px;}
+    label{display:block;font-size:13px;font-weight:600;color:#2D3748;margin-bottom:6px;}
+    input{width:100%;padding:11px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:15px;font-family:inherit;outline:none;transition:all .2s;margin-bottom:16px;}
+    input:focus{border-color:#0A5C8A;box-shadow:0 0 0 3px rgba(10,92,138,.1);}
+    .btn{width:100%;padding:13px;background:linear-gradient(135deg,#0A5C8A,#074266);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(10,92,138,.35);}
+    .info{background:#EBF4FF;border:1px solid #BEE3F8;border-left:4px solid #0A5C8A;border-radius:8px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:#2C5282;}
+    .back{text-align:center;margin-top:18px;font-size:13px;}
+    .back a{color:#718096;text-decoration:none;}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="card-top">
+    <div style="font-size:40px;margin-bottom:12px;">🔑</div>
+    <h1>Forgot Password?</h1>
+    <p>Enter your username or email address.<br/>An administrator will approve your request before a reset link is sent.</p>
+  </div>
+  <div class="card-body">
+    {% if messages %}
+    {% for msg in messages %}
+    <div style="background:#F0FFF4;border:1px solid #9AE6B4;border-left:4px solid #38A169;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#276749;">
+      <i class="fas fa-check-circle"></i> {{ msg }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="info">
+      <i class="fas fa-shield-alt"></i>
+      <strong> Secure process:</strong> For your safety, password resets are reviewed by an administrator before any link is sent.
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <label for="identifier">Username or Email Address</label>
+      <input type="text" id="identifier" name="identifier" placeholder="Enter your username or email" autofocus />
+      <button type="submit" class="btn"><i class="fas fa-paper-plane"></i> Request Reset</button>
+    </form>
+
+    <div class="back">
+      <a href="/accounts/login/"><i class="fas fa-arrow-left"></i> Back to Login</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

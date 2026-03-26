@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title>Set New Password</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:#06304A;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+    .card{background:#fff;border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);}
+    .card-top{background:linear-gradient(135deg,#06304A,#0A5C8A);padding:28px;text-align:center;}
+    .card-top h1{font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:4px;}
+    .card-top p{font-size:13px;color:rgba(255,255,255,.7);}
+    .card-body{padding:28px;}
+    label{display:block;font-size:13px;font-weight:600;color:#2D3748;margin-bottom:6px;}
+    .input-wrap{position:relative;margin-bottom:16px;}
+    .input-wrap input{width:100%;padding:11px 44px 11px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:15px;font-family:inherit;outline:none;transition:all .2s;}
+    .input-wrap input:focus{border-color:#0A5C8A;box-shadow:0 0 0 3px rgba(10,92,138,.1);}
+    .eye{position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:#718096;cursor:pointer;font-size:14px;}
+    .btn{width:100%;padding:13px;background:linear-gradient(135deg,#0A5C8A,#074266);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(10,92,138,.35);}
+    .error{background:#FFF5F5;border-left:4px solid #E53E3E;border-radius:8px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:#9B2C2C;}
+    .strength{height:4px;border-radius:2px;margin-top:4px;transition:all .3s;background:#E2E8F0;}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="card-top">
+    <div style="font-size:36px;margin-bottom:10px;">🔐</div>
+    <h1>Set New Password</h1>
+    <p>For account: <strong style="color:#00C49A;">{{ user.username }}</strong></p>
+  </div>
+  <div class="card-body">
+    {% if messages %}
+    {% for msg in messages %}
+    <div class="error"><i class="fas fa-exclamation-circle"></i> {{ msg }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <label>New Password</label>
+      <div class="input-wrap">
+        <input type="password" id="pw1" name="password1" placeholder="At least 8 characters" autofocus required />
+        <button type="button" class="eye" onclick="toggle('pw1','ei1')"><i class="fas fa-eye" id="ei1"></i></button>
+      </div>
+      <div class="strength" id="strengthBar"></div>
+      <div id="strengthLabel" style="font-size:11px;color:#718096;margin-bottom:16px;margin-top:4px;"></div>
+
+      <label>Confirm Password</label>
+      <div class="input-wrap">
+        <input type="password" id="pw2" name="password2" placeholder="Repeat password" required />
+        <button type="button" class="eye" onclick="toggle('pw2','ei2')"><i class="fas fa-eye" id="ei2"></i></button>
+      </div>
+
+      <button type="submit" class="btn"><i class="fas fa-check-circle"></i> Set New Password</button>
+    </form>
+  </div>
+</div>
+<script>
+function toggle(inputId, iconId) {
+  const i = document.getElementById(inputId);
+  const ic = document.getElementById(iconId);
+  i.type = i.type === 'password' ? 'text' : 'password';
+  ic.className = i.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+document.getElementById('pw1').addEventListener('input', function() {
+  const v = this.value;
+  const bar = document.getElementById('strengthBar');
+  const lbl = document.getElementById('strengthLabel');
+  let strength = 0;
+  if (v.length >= 8) strength++;
+  if (/[A-Z]/.test(v)) strength++;
+  if (/[0-9]/.test(v)) strength++;
+  if (/[^A-Za-z0-9]/.test(v)) strength++;
+  const colors = ['#E53E3E','#DD6B20','#D69E2E','#38A169'];
+  const labels = ['Weak','Fair','Good','Strong'];
+  if (v.length > 0) {
+    bar.style.background = colors[strength-1] || '#E2E8F0';
+    bar.style.width = (strength * 25) + '%';
+    lbl.textContent = labels[strength-1] || '';
+    lbl.style.color = colors[strength-1] || '#718096';
+  } else {
+    bar.style.background = '#E2E8F0';
+    lbl.textContent = '';
+  }
+});
+</script>
+</body>
+</html>

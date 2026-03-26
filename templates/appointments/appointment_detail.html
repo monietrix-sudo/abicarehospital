@@ -1,0 +1,213 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Appointment Details</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
+      <a href="{% url 'appointments:list' %}">Appointments</a> ›
+      #{{ appointment.pk }}
+    </div>
+  </div>
+  <a href="{% url 'appointments:list' %}" class="btn-abi-outline"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="row g-4">
+  <!-- Main appointment info -->
+  <div class="col-lg-8">
+    <div class="card-abi mb-4">
+      <div class="card-header-abi">
+        <i class="fas fa-calendar-check" style="color:var(--primary);"></i>
+        <h2>Appointment Info</h2>
+        <!-- Status badge -->
+        <span class="badge-abi ms-auto
+          {% if appointment.status == 'confirmed' or appointment.status == 'completed' %}badge-success
+          {% elif appointment.status == 'cancelled' %}badge-danger
+          {% elif appointment.status == 'in_progress' %}badge-warning
+          {% else %}badge-primary{% endif %}" style="font-size:13px;padding:5px 14px;">
+          {{ appointment.get_status_display }}
+        </span>
+      </div>
+      <div class="card-body-abi">
+        <dl style="display:grid;grid-template-columns:180px 1fr;gap:12px 20px;font-size:14px;">
+          <dt style="color:var(--text-muted);font-weight:500;">Patient</dt>
+          <dd><a href="{% url 'patient_detail:detail' appointment.patient.hospital_number %}" style="font-weight:600;color:var(--primary);text-decoration:none;">{{ appointment.patient.full_name }}</a> &nbsp;<span style="color:var(--text-muted);font-size:12px;">{{ appointment.patient.hospital_number }}</span></dd>
+
+          <dt style="color:var(--text-muted);font-weight:500;">Doctor</dt>
+          <dd style="font-weight:600;">Dr. {{ appointment.doctor.get_full_name|default:"—" }}</dd>
+
+          <dt style="color:var(--text-muted);font-weight:500;">Date</dt>
+          <dd style="font-weight:600;">{{ appointment.appointment_date|date:"l, F j, Y" }}</dd>
+
+          <dt style="color:var(--text-muted);font-weight:500;">Time</dt>
+          <dd style="font-weight:600;">{{ appointment.appointment_time|time:"g:i A" }} ({{ appointment.duration_minutes }} min)</dd>
+
+          <dt style="color:var(--text-muted);font-weight:500;">Type</dt>
+          <dd>
+            <span class="badge-abi {% if appointment.appointment_type == 'teleconsult' %}badge-accent{% else %}badge-primary{% endif %}">
+              {{ appointment.get_appointment_type_display }}
+            </span>
+          </dd>
+
+          <dt style="color:var(--text-muted);font-weight:500;">Reason</dt>
+          <dd>{{ appointment.reason|default:"—" }}</dd>
+
+          {% if appointment.notes %}
+          <dt style="color:var(--text-muted);font-weight:500;">Doctor's Notes</dt>
+          <dd>{{ appointment.notes }}</dd>
+          {% endif %}
+
+          <dt style="color:var(--text-muted);font-weight:500;">Booked By</dt>
+          <dd>{{ appointment.booked_by.get_full_name|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Doctor: update status form -->
+    {% if user.is_doctor or user.is_admin_staff %}
+    <div class="card-abi mb-4">
+      <div class="card-header-abi"><h2>Update Appointment</h2></div>
+      <div class="card-body-abi">
+        <form method="post" action="{% url 'appointments:update_status' appointment.pk %}" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <select name="status" class="form-select">
+                {% for val, label in appointment.STATUS_CHOICES %}
+                <option value="{{ val }}" {% if appointment.status == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Teleconsult Link (Zoom/Meet)</label>
+              <input type="url" name="teleconsult_link" class="form-control"
+                     value="{{ appointment.teleconsult_link }}"
+                     placeholder="https://zoom.us/j/... or https://meet.google.com/..." />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Doctor's Notes</label>
+              <textarea name="notes" class="form-control" rows="3" placeholder="Add consultation notes…">{{ appointment.notes }}</textarea>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn-abi-primary"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right sidebar: teleconsult panel -->
+  <div class="col-lg-4">
+
+    <!-- TELECONSULT CARD -->
+    {% if appointment.appointment_type == 'teleconsult' %}
+    <div class="card-abi mb-4" style="border: 2px solid {% if appointment.teleconsult_approved %}var(--accent){% else %}var(--border){% endif %};">
+      <div class="card-header-abi" style="background:{% if appointment.teleconsult_approved %}rgba(0,196,154,0.08){% else %}var(--bg-page){% endif %};">
+        <i class="fas fa-video" style="color:{% if appointment.teleconsult_approved %}var(--accent){% else %}var(--text-muted){% endif %};font-size:18px;"></i>
+        <h2>Teleconsultation</h2>
+      </div>
+      <div class="card-body-abi" style="text-align:center;">
+
+        {% if appointment.teleconsult_approved %}
+          <!-- Approved: show JOIN button -->
+          <div style="margin-bottom:16px;">
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(0,196,154,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:28px;color:var(--accent);">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div style="font-weight:700;font-size:16px;color:var(--success);">Session Approved</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+              Approved by Dr. {{ appointment.teleconsult_approved_by.get_full_name }}
+              {% if appointment.teleconsult_approved_at %}<br />{{ appointment.teleconsult_approved_at|date:"M d, Y g:i A" }}{% endif %}
+            </div>
+          </div>
+
+          {% if appointment.teleconsult_link %}
+          <a href="{% url 'appointments:join_teleconsult' appointment.pk %}"
+             class="btn-join-call" target="_blank" rel="noopener noreferrer"
+             style="width:100%;justify-content:center;">
+            <i class="fas fa-video"></i> Join Call Now
+          </a>
+          {% if appointment.allow_recording %}
+          <div style="margin-top:10px;font-size:12px;color:var(--text-muted);"><i class="fas fa-circle" style="color:var(--danger);font-size:8px;"></i> Recording enabled for this session</div>
+          {% endif %}
+          {% else %}
+          <div style="color:var(--text-muted);font-size:13px;">No link set yet. Ask your doctor.</div>
+          {% endif %}
+
+          <!-- Doctor: revoke button -->
+          {% if user.can_approve_teleconsult %}
+          <form method="post" action="{% url 'appointments:approve_teleconsult' appointment.pk %}" style="margin-top:14px;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="revoke" />
+            <button type="submit" class="btn-danger-soft" style="width:100%;justify-content:center;" onclick="return confirm('Revoke patient access to this teleconsult?')">
+              <i class="fas fa-ban"></i> Revoke Access
+            </button>
+          </form>
+          {% endif %}
+
+        {% else %}
+          <!-- Not yet approved -->
+          <div style="margin-bottom:16px;">
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(113,128,150,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:28px;color:var(--text-muted);">
+              <i class="fas fa-lock"></i>
+            </div>
+            <div style="font-weight:700;font-size:16px;color:var(--text-muted);">Awaiting Approval</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+              Doctor must authorize this teleconsult before you can join.
+            </div>
+          </div>
+
+          <!-- Patient: show locked button -->
+          {% if user.is_patient_user %}
+          <button class="btn-join-call locked" disabled style="width:100%;justify-content:center;">
+            <i class="fas fa-lock"></i> Not Yet Authorized
+          </button>
+          {% endif %}
+
+          <!-- Doctor: approve button -->
+          {% if user.can_approve_teleconsult %}
+          <form method="post" action="{% url 'appointments:approve_teleconsult' appointment.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="approve" />
+            <div class="form-abi" style="text-align:left;margin-bottom:12px;">
+              <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" name="allow_recording" style="width:16px;height:16px;" />
+                Allow session recording
+              </label>
+            </div>
+            <button type="submit" class="btn-abi-accent" style="width:100%;justify-content:center;">
+              <i class="fas fa-unlock"></i> Approve Teleconsult
+            </button>
+          </form>
+          {% endif %}
+        {% endif %}
+
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick links -->
+    <div class="card-abi">
+      <div class="card-header-abi"><h2>Quick Links</h2></div>
+      <div class="card-body-abi" style="display:flex;flex-direction:column;gap:10px;">
+        <a href="{% url 'patient_detail:detail' appointment.patient.hospital_number %}" class="btn-abi-outline" style="width:100%;justify-content:center;">
+          <i class="fas fa-hospital-user"></i> View Patient Profile
+        </a>
+        <a href="{% url 'lab_results:order' appointment.patient.hospital_number %}" class="btn-abi-outline" style="width:100%;justify-content:center;">
+          <i class="fas fa-flask"></i> Order Lab Test
+        </a>
+        <a href="{% url 'medications:prescribe' appointment.patient.hospital_number %}" class="btn-abi-outline" style="width:100%;justify-content:center;">
+          <i class="fas fa-pills"></i> Prescribe Medication
+        </a>
+        <a href="{% url 'records:upload' appointment.patient.hospital_number %}" class="btn-abi-outline" style="width:100%;justify-content:center;">
+          <i class="fas fa-upload"></i> Upload Record
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
