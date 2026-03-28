@@ -9,11 +9,24 @@
       {% if query %} › Search: "{{ query }}"{% endif %}
     </div>
   </div>
-  {% if user.role != 'patient' %}
-  <a href="{% url 'patients:add_patient' %}" class="btn-abi-primary">
-    <i class="fas fa-user-plus"></i> Register New Patient
-  </a>
-  {% endif %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    {% if user.is_admin_staff or user.is_receptionist %}
+    <a href="{% url 'imports:export_patients' %}" class="btn-abi-outline">
+      <i class="fas fa-file-excel" style="color:#38A169;"></i> Export Excel
+    </a>
+    <a href="{% url 'imports:import_patients' %}" class="btn-abi-outline">
+      <i class="fas fa-upload"></i> Import Excel
+    </a>
+    <a href="{% url 'families:list' %}" class="btn-abi-outline">
+      <i class="fas fa-users"></i> Family Groups
+    </a>
+    {% endif %}
+    {% if user.role != 'patient' %}
+    <a href="{% url 'patients:add_patient' %}" class="btn-abi-primary">
+      <i class="fas fa-user-plus"></i> Register New Patient
+    </a>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Search & Filters -->

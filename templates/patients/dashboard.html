@@ -60,6 +60,137 @@
   </div>
 </div>
 
+<!-- ── QUICK ACTIONS ─────────────────────────────────────────── -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi">
+    <i class="fas fa-bolt" style="color:var(--accent);"></i>
+    <h2>Quick Actions</h2>
+  </div>
+  <div class="card-body-abi">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
+
+      <!-- Register Patient -->
+      {% if user.role != 'patient' %}
+      <a href="{% url 'patients:add_patient' %}"
+         style="display:flex;flex-direction:column;align-items:center;gap:8px;
+                padding:18px 12px;background:#EBF4FF;border-radius:12px;
+                text-decoration:none;transition:all .2s;"
+         onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(10,92,138,.15)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--primary);
+                    color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;">
+          <i class="fas fa-user-plus"></i>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--dark);text-align:center;">Register Patient</span>
+      </a>
+      {% endif %}
+
+      <!-- All Patients -->
+      <a href="{% url 'patient_detail:list' %}"
+         style="display:flex;flex-direction:column;align-items:center;gap:8px;
+                padding:18px 12px;background:#F0FFF4;border-radius:12px;
+                text-decoration:none;transition:all .2s;"
+         onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,196,154,.15)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--accent);
+                    color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;">
+          <i class="fas fa-hospital-user"></i>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--dark);text-align:center;">All Patients</span>
+      </a>
+
+      <!-- Book Appointment -->
+      <a href="{% url 'appointments:book' %}"
+         style="display:flex;flex-direction:column;align-items:center;gap:8px;
+                padding:18px 12px;background:#FFFBEB;border-radius:12px;
+                text-decoration:none;transition:all .2s;"
+         onmouseover="this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:50%;background:#D69E2E;
+                    color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;">
+          <i class="fas fa-calendar-plus"></i>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--dark);text-align:center;">Book Appointment</span>
+      </a>
+
+      <!-- Family Groups -->
+      <a href="{% url 'families:list' %}"
+         style="display:flex;flex-direction:column;align-items:center;gap:8px;
+                padding:18px 12px;background:#FAF5FF;border-radius:12px;
+                text-decoration:none;transition:all .2s;"
+         onmouseover="this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:50%;background:#805AD5;
+                    color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;">
+          <i class="fas fa-users"></i>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--dark);text-align:center;">Family Groups</span>
+      </a>
+
+      <!-- Waiting Room -->
+      <a href="{% url 'queue:list' %}"
+         style="display:flex;flex-direction:column;align-items:center;gap:8px;
+                padding:18px 12px;background:#FFF5F5;border-radius:12px;
+                text-decoration:none;transition:all .2s;"
+         onmouseover="this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:50%;background:#E53E3E;
+                    color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;">
+          <i class="fas fa-couch"></i>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--dark);text-align:center;">Waiting Room</span>
+      </a>
+
+      <!-- Import / Export -->
+      {% if user.is_admin_staff or user.is_receptionist %}
+      <a href="{% url 'imports:import_patients' %}"
+         style="display:flex;flex-direction:column;align-items:center;gap:8px;
+                padding:18px 12px;background:#F0FFF4;border-radius:12px;
+                text-decoration:none;transition:all .2s;"
+         onmouseover="this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:50%;background:#38A169;
+                    color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;">
+          <i class="fas fa-file-excel"></i>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--dark);text-align:center;">Import / Export</span>
+      </a>
+      {% endif %}
+
+      <!-- Staff Accounts (admin only) -->
+      {% if user.is_admin_staff %}
+      <a href="{% url 'accounts:staff_list' %}"
+         style="display:flex;flex-direction:column;align-items:center;gap:8px;
+                padding:18px 12px;background:#EBF4FF;border-radius:12px;
+                text-decoration:none;transition:all .2s;"
+         onmouseover="this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--primary);
+                    color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;">
+          <i class="fas fa-user-md"></i>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--dark);text-align:center;">Staff Accounts</span>
+      </a>
+
+      <!-- Lab Templates -->
+      <a href="{% url 'lab_results:templates' %}"
+         style="display:flex;flex-direction:column;align-items:center;gap:8px;
+                padding:18px 12px;background:#EBF4FF;border-radius:12px;
+                text-decoration:none;transition:all .2s;"
+         onmouseover="this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:50%;background:#3182CE;
+                    color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;">
+          <i class="fas fa-flask"></i>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--dark);text-align:center;">Lab Templates</span>
+      </a>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
 <!-- ── MAIN GRID: Appointments + Recent Patients ─────────────── -->
 <div class="row g-3">
 

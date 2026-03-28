@@ -1,4 +1,3 @@
-{% load static %}
 <!DOCTYPE html>
 <!--
   AbiCare Hospital EHR - Base Template
@@ -10,11 +9,8 @@
     block content     - main page content
     block extra_js    - extra scripts per page
 -->
-    
-
 <html lang="en">
 <head>
-
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Robots: block ALL crawlers at meta level too -->
@@ -52,7 +48,7 @@
       --text-primary:   #1A202C;
       --text-muted:     #718096;
       --surface:        #FFFFFF;
-      --bg-page:        url('abicare-logop.jpg');
+      --bg-page:        #F0F4F8;
       --border:         #E2E8F0;
       --card-shadow:    0 2px 16px rgba(10,92,138,0.08);
       --card-shadow-hover: 0 8px 32px rgba(10,92,138,0.16);
@@ -66,15 +62,15 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { height: 100%; scroll-behavior: smooth; }
     body {
-    font-family: 'DM Sans', sans-serif;
-    background-image: url("{% static 'images/abicare-logop.jpg' %}");
-    background-size: cover;
-    background-position: center center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-    color: var(--text-dark);
-    min-height: 100vh;
-}
+      font-family: var(--font-body);
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      font-size: 15px;
+      line-height: 1.6;
+    }
 
     /* ── SIDEBAR ────────────────────────────────────────────────── */
     .sidebar {
@@ -549,7 +545,7 @@
   <div class="sidebar-header">
     <a href="{% url 'patients:dashboard' %}" class="sidebar-brand">
       <div class="sidebar-brand-icon">
-         <img src="{% static 'images/abicare-logop.jpg' %}" alt="Hospital Logo" style="height:50px; border-radius: 20px; "/>
+        <i class="fas fa-heartbeat"></i>
       </div>
       <div class="sidebar-brand-text">
         <div class="name">{{ HOSPITAL_NAME }}</div>
@@ -578,25 +574,43 @@
   <!-- Navigation -->
   <nav class="sidebar-nav">
 
+    <!-- ── MAIN ─────────────────────────────────────────── -->
     <div class="sidebar-section-label">Main</div>
     <a href="{% url 'patients:dashboard' %}"
        class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
       <span class="nav-icon"><i class="fas fa-th-large"></i></span> Dashboard
     </a>
 
+    <!-- ── PATIENTS ──────────────────────────────────────── -->
     <div class="sidebar-section-label">Patients</div>
+
     <a href="{% url 'patient_detail:list' %}"
-       class="sidebar-link {% if 'patient' in request.path and 'dashboard' not in request.path %}active{% endif %}">
+       class="sidebar-link {% if 'patients' in request.path and 'dashboard' not in request.path and 'add' not in request.path %}active{% endif %}">
       <span class="nav-icon"><i class="fas fa-hospital-user"></i></span> All Patients
     </a>
+
     {% if user.role != 'patient' %}
     <a href="{% url 'patients:add_patient' %}"
-       class="sidebar-link">
+       class="sidebar-link {% if 'add' in request.path %}active{% endif %}">
       <span class="nav-icon"><i class="fas fa-user-plus"></i></span> Register Patient
     </a>
     {% endif %}
 
+    {% if user.is_admin_staff or user.is_receptionist %}
+    <a href="{% url 'imports:import_patients' %}"
+       class="sidebar-link {% if 'imports' in request.path %}active{% endif %}">
+      <span class="nav-icon"><i class="fas fa-file-excel" style="color:#38A169;"></i></span> Import / Export Excel
+    </a>
+    {% endif %}
+
+    <a href="{% url 'families:list' %}"
+       class="sidebar-link {% if 'families' in request.path %}active{% endif %}">
+      <span class="nav-icon"><i class="fas fa-users"></i></span> Family Groups
+    </a>
+
+    <!-- ── CLINICAL ──────────────────────────────────────── -->
     <div class="sidebar-section-label">Clinical</div>
+
     <a href="{% url 'appointments:list' %}"
        class="sidebar-link {% if 'appointments' in request.path %}active{% endif %}">
       <span class="nav-icon"><i class="fas fa-calendar-check"></i></span> Appointments
@@ -618,26 +632,34 @@
       <span class="nav-icon"><i class="fas fa-video"></i></span> Teleconsult
     </a>
 
+    <!-- ── ADMINISTRATION ────────────────────────────────── -->
     {% if user.is_admin_staff or user.is_superuser %}
     <div class="sidebar-section-label">Administration</div>
-    {% if user.is_admin_staff %}
+
+    <a href="{% url 'accounts:staff_list' %}"
+       class="sidebar-link {% if 'accounts/staff' in request.path %}active{% endif %}">
+      <span class="nav-icon"><i class="fas fa-user-md"></i></span> Staff Accounts
+    </a>
+
     <a href="{% url 'accounts:reset_requests' %}"
        class="sidebar-link {% if 'reset-requests' in request.path %}active{% endif %}">
-      <span class="nav-icon"><i class="fas fa-key"></i></span>
-      Reset Requests
+      <span class="nav-icon"><i class="fas fa-key"></i></span> Password Resets
       <span id="resetBadge" style="display:none;background:#E53E3E;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:2px 7px;margin-left:auto;"></span>
     </a>
-    {% endif %}
-    <a href="{% url 'audit_logs:list' %}" 
+
+    <a href="{% url 'audit_logs:list' %}"
        class="sidebar-link {% if 'audit' in request.path %}active{% endif %}">
       <span class="nav-icon"><i class="fas fa-history"></i></span> Audit Logs
     </a>
+
     <a href="{% url 'admin:index' %}" class="sidebar-link">
       <span class="nav-icon"><i class="fas fa-cogs"></i></span> Admin Panel
     </a>
     {% endif %}
 
+    <!-- ── TOOLS ─────────────────────────────────────────── -->
     <div class="sidebar-section-label">Tools</div>
+
     <a href="{% url 'queue:list' %}"
        class="sidebar-link {% if 'queue' in request.path %}active{% endif %}">
       <span class="nav-icon"><i class="fas fa-users-cog"></i></span> Waiting Room
@@ -647,7 +669,9 @@
       <span class="nav-icon"><i class="fas fa-bell"></i></span> Notifications
     </a>
 
+    <!-- ── ACCOUNT ────────────────────────────────────────── -->
     <div class="sidebar-section-label">Account</div>
+
     <a href="{% url 'accounts:profile' %}"
        class="sidebar-link {% if 'profile' in request.path %}active{% endif %}">
       <span class="nav-icon"><i class="fas fa-user-circle"></i></span> My Profile
