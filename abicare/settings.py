@@ -58,7 +58,7 @@ HOSPITAL_TAGLINE       = "Compassionate Care, Advanced Medicine"
 HOSPITAL_ADDRESS       = "123 Medical Drive, Lagos, Nigeria"
 HOSPITAL_PHONE         = "+234 800 000 0000"
 HOSPITAL_EMAIL         = "info@abicarehospital.com"
-HOSPITAL_LOGO          = "images/abicare-logo.png"
+HOSPITAL_LOGO          = "images/abicare-logop.png"
 HOSPITAL_PRIMARY_COLOR = "#0A5C8A"
 HOSPITAL_ACCENT_COLOR  = "#00C49A"
 HOSPITAL_WEBSITE       = "https://abicarehospital.com"
@@ -322,3 +322,9 @@ JAZZMIN_UI_TWEAKS = {
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# settings.py
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://abicarehospital-production.up.railway.app",
+    "https://*.railway.app",  # This covers any other railway subdomains
+]
