@@ -1,0 +1,145 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Import Results</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'imports:import_patients' %}">Import</a> › Session #{{ session.pk }}
+    </div>
+  </div>
+  <a href="{% url 'imports:import_patients' %}" class="btn-abi-outline">
+    <i class="fas fa-arrow-left"></i> Back to Import
+  </a>
+</div>
+
+<!-- Stats -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+            gap:14px;margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-icon teal"><i class="fas fa-check"></i></div>
+    <div>
+      <div class="stat-value" style="color:var(--success);">{{ session.success_count }}</div>
+      <div class="stat-label">Patients Added</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#FFF5F5;color:#E53E3E;">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <div>
+      <div class="stat-value" style="color:#E53E3E;">{{ session.error_count }}</div>
+      <div class="stat-label">Rows with Errors</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#FFFBEB;color:#D69E2E;">
+      <i class="fas fa-forward"></i>
+    </div>
+    <div>
+      <div class="stat-value" style="color:#D69E2E;">{{ session.skip_count }}</div>
+      <div class="stat-label">Duplicates Skipped</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-table"></i></div>
+    <div>
+      <div class="stat-value">{{ session.total_rows }}</div>
+      <div class="stat-label">Total Rows</div>
+    </div>
+  </div>
+</div>
+
+{% if session.status == 'complete' %}
+<div style="background:#F0FFF4;border:1px solid #9AE6B4;border-radius:12px;
+            padding:32px;text-align:center;margin-bottom:24px;">
+  <i class="fas fa-check-circle" style="font-size:40px;color:var(--success);display:block;margin-bottom:10px;"></i>
+  <div style="font-size:20px;font-weight:700;color:var(--success);">Import Completed Successfully</div>
+  <p style="color:#276749;margin-top:6px;">All {{ session.success_count }} patients were added with no errors.</p>
+</div>
+{% endif %}
+
+<!-- Errors that need fixing -->
+{% if errors %}
+<div class="card-abi mb-4">
+  <div class="card-header-abi">
+    <i class="fas fa-exclamation-triangle" style="color:#E53E3E;"></i>
+    <h2>Rows That Need Fixing ({{ errors.count }})</h2>
+    <div style="margin-left:auto;font-size:13px;color:var(--text-muted);">
+      These rows were NOT imported. Fix the data and register manually.
+    </div>
+  </div>
+  <div class="card-body-abi" style="padding:0;overflow-x:auto;">
+    <table class="table-abi" style="min-width:700px;">
+      <thead>
+        <tr>
+          <th style="width:70px;">Row #</th>
+          <th>Error Type</th>
+          <th>Field</th>
+          <th>What Went Wrong</th>
+          <th>Raw Data (first 3 fields)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for err in errors %}
+        <tr>
+          <td style="font-weight:700;font-size:15px;">{{ err.row_number }}</td>
+          <td>
+            <span class="badge-abi
+              {% if err.error_type == 'missing_required' %}badge-danger
+              {% elif err.error_type == 'duplicate' %}badge-warning
+              {% else %}badge-muted{% endif %}">
+              {{ err.get_error_type_display }}
+            </span>
+          </td>
+          <td style="font-size:13px;font-family:monospace;color:var(--primary);">
+            {{ err.field_name|default:"—" }}
+          </td>
+          <td style="font-size:13px;">{{ err.error_message }}</td>
+          <td style="font-size:12px;color:var(--text-muted);">
+            {% if err.raw_data %}
+              {{ err.raw_data.first_name|default:"" }}
+              {{ err.raw_data.last_name|default:"" }}
+              {% if err.raw_data.date_of_birth %}
+                ({{ err.raw_data.date_of_birth }})
+              {% endif %}
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Session info -->
+<div class="card-abi">
+  <div class="card-header-abi"><h2>Session Details</h2></div>
+  <div class="card-body-abi">
+    <dl style="display:grid;grid-template-columns:160px 1fr;gap:10px 20px;font-size:14px;">
+      <dt style="color:var(--text-muted);font-weight:600;">File</dt>
+      <dd>{{ session.file_name }}</dd>
+      <dt style="color:var(--text-muted);font-weight:600;">Uploaded</dt>
+      <dd>{{ session.uploaded_at|date:"F j, Y g:i A" }}</dd>
+      <dt style="color:var(--text-muted);font-weight:600;">Uploaded by</dt>
+      <dd>{{ session.uploaded_by.get_full_name|default:session.uploaded_by.username }}</dd>
+      <dt style="color:var(--text-muted);font-weight:600;">Status</dt>
+      <dd>
+        <span class="badge-abi
+          {% if session.status == 'complete' %}badge-success
+          {% elif session.status == 'complete_with_errors' %}badge-warning
+          {% elif session.status == 'failed' %}badge-danger
+          {% else %}badge-muted{% endif %}">
+          {{ session.get_status_display }}
+        </span>
+      </dd>
+      {% if session.notes %}
+      <dt style="color:var(--text-muted);font-weight:600;">Notes</dt>
+      <dd>{{ session.notes }}</dd>
+      {% endif %}
+    </dl>
+  </div>
+</div>
+
+{% endblock %}

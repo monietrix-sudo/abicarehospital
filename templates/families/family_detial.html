@@ -1,0 +1,243 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>{{ family.family_name }}</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'families:list' %}">Families</a> › {{ family.family_name }}
+    </div>
+  </div>
+  <a href="{% url 'families:list' %}" class="btn-abi-outline">
+    <i class="fas fa-arrow-left"></i> All Families
+  </a>
+</div>
+
+<!-- Privacy Notice -->
+<div style="background:#EBF4FF;border:1px solid #BEE3F8;border-left:4px solid var(--primary);
+            border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#1A365D;">
+  <i class="fas fa-shield-alt"></i>
+  <strong> Privacy:</strong> This view shows names and hospital numbers only.
+  Each patient's health records are private and accessible only via their individual profile.
+</div>
+
+<div class="row g-4">
+
+  <!-- Members list -->
+  <div class="col-lg-8">
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-users" style="color:var(--primary);"></i>
+        <h2>Members ({{ members.count }})</h2>
+      </div>
+      <div class="card-body-abi" style="padding:0;">
+        {% for member in members %}
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 20px;
+                    border-bottom:1px solid var(--border);
+                    {% if member.relationship == 'head' %}background:rgba(10,92,138,0.03);{% endif %}">
+
+          <!-- Avatar -->
+          {% if member.patient.photo %}
+          <img src="{{ member.patient.photo.url }}"
+               style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;" />
+          {% else %}
+          <div style="width:40px;height:40px;border-radius:50%;
+                      background:{% if member.relationship == 'head' %}var(--primary){% else %}#CBD5E0{% endif %};
+                      color:#fff;display:flex;align-items:center;justify-content:center;
+                      font-weight:700;font-size:15px;flex-shrink:0;">
+            {{ member.patient.first_name|first|upper }}{{ member.patient.last_name|first|upper }}
+          </div>
+          {% endif %}
+
+          <!-- Info -->
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <a href="{% url 'patient_detail:detail' member.patient.hospital_number %}"
+                 style="font-weight:700;font-size:15px;color:var(--dark);text-decoration:none;">
+                {{ member.patient.full_name }}
+              </a>
+              {% if member.relationship == 'head' %}
+              <i class="fas fa-crown" style="color:#D69E2E;font-size:11px;" title="Head of Family"></i>
+              {% endif %}
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);">
+              {{ member.patient.hospital_number }} · {{ member.patient.age }} yrs
+              · {{ member.patient.get_gender_display }}
+            </div>
+          </div>
+
+          <!-- Relationship badge -->
+          <span class="badge-abi {% if member.relationship == 'head' %}badge-primary{% else %}badge-muted{% endif %}">
+            {{ member.get_relationship_display }}
+          </span>
+
+          <!-- View patient link -->
+          <a href="{% url 'patient_detail:detail' member.patient.hospital_number %}"
+             class="btn-abi-outline" style="padding:5px 12px;font-size:12px;">
+            <i class="fas fa-eye"></i>
+          </a>
+
+          <!-- Remove -->
+          <form method="post" action="{% url 'families:remove_member' member.pk %}">
+            {% csrf_token %}
+            <button type="submit"
+                    style="background:none;border:none;color:#E53E3E;cursor:pointer;
+                           font-size:13px;padding:6px;"
+                    title="Remove from family"
+                    onclick="return confirm('Remove {{ member.patient.full_name }} from {{ family.family_name }}?')">
+              <i class="fas fa-times"></i>
+            </button>
+          </form>
+        </div>
+        {% empty %}
+        <div style="padding:40px;text-align:center;color:var(--text-muted);">
+          No members yet. Add patients using the form on the right.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Family notes -->
+    {% if family.address or family.notes %}
+    <div class="card-abi mt-3">
+      <div class="card-header-abi"><h2>Family Details</h2></div>
+      <div class="card-body-abi">
+        {% if family.address %}
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Address</div>
+          <div style="font-size:14px;margin-top:4px;">{{ family.address }}</div>
+        </div>
+        {% endif %}
+        {% if family.notes %}
+        <div>
+          <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Notes</div>
+          <div style="font-size:14px;margin-top:4px;">{{ family.notes }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Add member form -->
+  <div class="col-lg-4">
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-user-plus" style="color:var(--accent);"></i>
+        <h2>Add Member</h2>
+      </div>
+      <div class="card-body-abi">
+        <form method="post" action="{% url 'families:add_member' family.pk %}" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+
+            <div class="col-12">
+              <label class="form-label">Search Patient *</label>
+              <input type="text" id="patientSearch" class="form-control"
+                     placeholder="Type name or hospital number..."
+                     autocomplete="off" />
+              <!-- Search results dropdown -->
+              <div id="searchDropdown" style="position:relative;"></div>
+              <!-- Hidden field for selected patient ID -->
+              <input type="hidden" name="patient_id" id="selectedPatientId" />
+              <div id="selectedPatientLabel"
+                   style="margin-top:6px;font-size:13px;color:var(--accent);
+                          font-weight:600;min-height:18px;"></div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Relationship *</label>
+              <select name="relationship" class="form-select">
+                {% for val, label in relationship_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">
+                Notes <span style="font-weight:400;color:var(--text-muted);">(optional)</span>
+              </label>
+              <input type="text" name="notes" class="form-control"
+                     placeholder="Any note about this member..." />
+            </div>
+
+            <div class="col-12">
+              <button type="submit" class="btn-abi-primary"
+                      style="width:100%;justify-content:center;"
+                      id="addMemberBtn" disabled>
+                <i class="fas fa-user-plus"></i> Add to Family
+              </button>
+            </div>
+
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let searchTimer;
+
+document.getElementById('patientSearch').addEventListener('input', function () {
+  clearTimeout(searchTimer);
+  const q = this.value.trim();
+
+  if (q.length < 2) {
+    document.getElementById('searchDropdown').innerHTML = '';
+    return;
+  }
+
+  searchTimer = setTimeout(() => {
+    fetch(`/families/api/patient-search/?q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(data => {
+        const dropdown = document.getElementById('searchDropdown');
+
+        if (!data.results.length) {
+          dropdown.innerHTML = '';
+          return;
+        }
+
+        dropdown.innerHTML =
+          '<div style="position:absolute;background:#fff;border:1px solid var(--border);' +
+          'border-radius:10px;width:100%;z-index:200;box-shadow:0 6px 20px rgba(0,0,0,.12);">' +
+          data.results.map(p =>
+            `<div onclick="selectPatient(${p.id},'${p.name}','${p.hospital_number}')"
+               style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);"
+               onmouseover="this.style.background='#F7FAFC'"
+               onmouseout="this.style.background='#fff'">
+               <strong>${p.name}</strong>
+               <span style="color:var(--text-muted);font-size:12px;">
+                 &nbsp;${p.hospital_number} · ${p.age} yrs
+               </span>
+             </div>`
+          ).join('') +
+          '</div>';
+      })
+      .catch(() => {});
+  }, 300);
+});
+
+function selectPatient(id, name, num) {
+  document.getElementById('selectedPatientId').value = id;
+  document.getElementById('patientSearch').value     = name;
+  document.getElementById('selectedPatientLabel').textContent =
+    '✓ ' + name + ' (' + num + ') selected';
+  document.getElementById('searchDropdown').innerHTML = '';
+  document.getElementById('addMemberBtn').disabled = false;
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('#patientSearch') && !e.target.closest('#searchDropdown')) {
+    document.getElementById('searchDropdown').innerHTML = '';
+  }
+});
+</script>
+{% endblock %}

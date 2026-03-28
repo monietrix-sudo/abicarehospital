@@ -1,0 +1,154 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Import Patients from Excel</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patients:dashboard' %}">Dashboard</a> › Import
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="{% url 'imports:download_template' %}" class="btn-abi-outline">
+      <i class="fas fa-download"></i> Download Template
+    </a>
+    <a href="{% url 'imports:export_patients' %}" class="btn-abi-outline">
+      <i class="fas fa-file-excel" style="color:#38A169;"></i> Export All Patients
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Upload form -->
+  <div class="col-lg-7">
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-upload" style="color:var(--accent);"></i>
+        <h2>Upload Excel File</h2>
+      </div>
+      <div class="card-body-abi">
+
+        <!-- Key rule callout -->
+        <div style="background:#EBF4FF;border-left:4px solid var(--primary);
+                    border-radius:8px;padding:13px 16px;margin-bottom:20px;font-size:13px;color:#1A365D;">
+          <i class="fas fa-info-circle"></i>
+          <strong> Hospital numbers are always auto-generated.</strong>
+          They are never read from Excel — this prevents database conflicts.
+          Any existing/old hospital numbers go in the
+          <strong>Old Hospital Number</strong> column only.
+        </div>
+
+        <div style="background:#F0FFF4;border-left:4px solid #38A169;
+                    border-radius:8px;padding:13px 16px;margin-bottom:20px;font-size:13px;color:#276749;">
+          <i class="fas fa-check-circle"></i>
+          <strong> Errors never stop the import.</strong>
+          Rows that fail are flagged for admin review. The rest of the file
+          continues importing normally.
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Excel File (.xlsx or .xls) *</label>
+              <input type="file" name="excel_file" class="form-control"
+                     accept=".xlsx,.xls" required />
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+                Maximum file size: 20 MB.
+                Download the template above to see the correct column format.
+              </div>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn-abi-primary">
+                <i class="fas fa-upload"></i> Start Import
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Column reference -->
+    <div class="card-abi mt-4">
+      <div class="card-header-abi"><h2>Column Reference</h2></div>
+      <div class="card-body-abi" style="padding:0;">
+        <table class="table-abi">
+          <thead>
+            <tr>
+              <th>Excel Column Name</th>
+              <th>Required?</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for col_name, field in column_map.items %}
+            <tr>
+              <td style="font-family:monospace;font-size:13px;font-weight:600;">
+                {{ col_name }}
+              </td>
+              <td>
+                {% if field in required_fields %}
+                <span class="badge-abi badge-danger">Required</span>
+                {% else %}
+                <span class="badge-abi badge-muted">Optional</span>
+                {% endif %}
+              </td>
+              <td style="font-size:12px;color:var(--text-muted);">
+                {% if field == 'gender' %}Male / Female / Other
+                {% elif field == 'blood_group' %}A+ A- B+ B- AB+ AB- O+ O-
+                {% elif field == 'genotype' %}AA AS SS SC AC
+                {% elif field == 'date_of_birth' %}YYYY-MM-DD or DD/MM/YYYY
+                {% elif field == 'legacy_hospital_number' %}Previous system number (not used as new ID)
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent sessions -->
+  <div class="col-lg-5">
+    <div class="card-abi">
+      <div class="card-header-abi"><h2>Recent Import Sessions</h2></div>
+      <div class="card-body-abi" style="padding:0;">
+        {% for session in recent_sessions %}
+        <a href="{% url 'imports:session_detail' session.pk %}"
+           style="display:flex;align-items:center;gap:12px;padding:13px 20px;
+                  border-bottom:1px solid var(--border);text-decoration:none;color:inherit;
+                  transition:background .15s;"
+           onmouseover="this.style.background='#F7FAFC'"
+           onmouseout="this.style.background=''">
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:14px;">{{ session.file_name }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">
+              {{ session.uploaded_at|date:"M d, Y g:i A" }}
+              · {{ session.success_count }} added
+              {% if session.error_count %}
+              <span style="color:#E53E3E;"> · {{ session.error_count }} errors</span>
+              {% endif %}
+            </div>
+          </div>
+          <span class="badge-abi
+            {% if session.status == 'complete' %}badge-success
+            {% elif session.status == 'complete_with_errors' %}badge-warning
+            {% elif session.status == 'failed' %}badge-danger
+            {% else %}badge-muted{% endif %}">
+            {{ session.get_status_display }}
+          </span>
+        </a>
+        {% empty %}
+        <div style="padding:40px;text-align:center;color:var(--text-muted);">
+          No imports have been run yet.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

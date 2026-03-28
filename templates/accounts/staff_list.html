@@ -1,0 +1,86 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Staff Accounts</h1>
+    <div class="breadcrumb-abi"><a href="{% url 'patients:dashboard' %}">Dashboard</a> › Staff</div>
+  </div>
+  <a href="{% url 'accounts:create_staff_account' %}" class="btn-abi-primary">
+    <i class="fas fa-user-plus"></i> Create Staff Account
+  </a>
+</div>
+
+<div class="card-abi">
+  <div class="card-body-abi" style="padding:0;">
+    <table class="table-abi">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Department</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in staff %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              {% if member.profile_picture %}
+              <img src="{{ member.profile_picture.url }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />
+              {% else %}
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">
+                {{ member.first_name|first|upper }}{{ member.last_name|first|upper }}
+              </div>
+              {% endif %}
+              <div>
+                <div style="font-weight:700;font-size:14px;">{{ member.get_full_name|default:member.username }}</div>
+                {% if member.must_change_password %}
+                <div style="font-size:11px;color:#E67E22;"><i class="fas fa-exclamation-circle"></i> Awaiting first login</div>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td style="font-family:monospace;font-size:13px;">{{ member.username }}</td>
+          <td>
+            <span class="badge-abi
+              {% if member.role == 'admin' %}badge-danger
+              {% elif member.role == 'doctor' %}badge-primary
+              {% elif member.role == 'nurse' %}badge-accent
+              {% elif member.role == 'lab_tech' %}badge-warning
+              {% else %}badge-muted{% endif %}">
+              {{ member.get_role_display }}
+            </span>
+          </td>
+          <td style="font-size:13px;color:var(--text-muted);">{{ member.department|default:"—" }}</td>
+          <td style="font-size:13px;">{{ member.email|default:"—" }}</td>
+          <td>
+            {% if member.is_active %}
+            <span class="badge-abi badge-success">Active</span>
+            {% else %}
+            <span class="badge-abi badge-muted">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'accounts:reset_staff_password' member.pk %}"
+               class="btn-abi-outline" style="padding:5px 12px;font-size:12px;">
+              <i class="fas fa-key"></i> Reset Password
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center;padding:48px;color:var(--text-muted);">
+            No staff accounts yet.
+            <a href="{% url 'accounts:create_staff_account' %}">Create the first one</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

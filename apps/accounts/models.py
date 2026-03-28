@@ -1,9 +1,10 @@
 """
 AbiCare - Accounts Models
 ==========================
-Custom User with hospital roles.
-Includes PasswordResetRequest model — patient must get admin approval
-before a reset link is sent.
+Custom User model with:
+- Hospital roles (admin, doctor, nurse, lab_tech, receptionist, patient)
+- must_change_password flag — forces password change on first login
+- PasswordResetRequest — admin must approve before reset link is sent
 """
 
 from django.contrib.auth.models import AbstractUser
@@ -38,6 +39,15 @@ class User(AbstractUser):
     is_active       = models.BooleanField(default=True)
     date_joined     = models.DateTimeField(default=timezone.now)
 
+    # ── Forced password change on first login ─────────────────────────
+    # Set to True when an account is created by staff.
+    # User is redirected to change-password page until this is False.
+    must_change_password = models.BooleanField(
+        default=False,
+        help_text="If True, user must change password before accessing the system."
+    )
+
+    # ── Role helper properties ────────────────────────────────────────
     @property
     def is_admin_staff(self):
         return self.role == self.ADMIN or self.is_superuser
@@ -85,9 +95,9 @@ class User(AbstractUser):
 
 class PasswordResetRequest(models.Model):
     """
-    Patient requests a password reset.
-    Admin must approve it before the reset link is sent.
-    This prevents anyone from triggering reset emails without consent.
+    Patient or staff requests a password reset.
+    Admin must approve before the reset link is emailed.
+    Prevents anyone triggering reset emails without admin consent.
     """
     STATUS_CHOICES = [
         ('pending',  'Pending Admin Approval'),
@@ -96,11 +106,10 @@ class PasswordResetRequest(models.Model):
         ('used',     'Used'),
     ]
 
-    user        = models.ForeignKey(User, on_delete=models.CASCADE,
-                                    related_name='reset_requests')
-    token       = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    status      = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-
+    user         = models.ForeignKey(User, on_delete=models.CASCADE,
+                                     related_name='reset_requests')
+    token        = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    status       = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     requested_at = models.DateTimeField(auto_now_add=True)
     reviewed_by  = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
                                      related_name='reviewed_reset_requests')
@@ -110,7 +119,6 @@ class PasswordResetRequest(models.Model):
 
     @property
     def is_valid(self):
-        from django.utils import timezone
         return (
             self.status == 'approved' and
             self.expires_at is not None and
@@ -118,9 +126,9 @@ class PasswordResetRequest(models.Model):
         )
 
     def __str__(self):
-        return f"Reset request by {self.user.username} — {self.get_status_display()}"
+        return f"Reset request — {self.user.username} ({self.get_status_display()})"
 
     class Meta:
-        ordering = ['-requested_at']
+        ordering            = ['-requested_at']
         verbose_name        = "Password Reset Request"
         verbose_name_plural = "Password Reset Requests"

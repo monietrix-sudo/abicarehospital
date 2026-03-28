@@ -1,0 +1,149 @@
+{% extends "portal/base_portal.html" %}
+{% block content %}
+
+<!-- Welcome Banner -->
+<div style="background:linear-gradient(135deg,#06304A,var(--primary));border-radius:16px;padding:24px;color:#fff;margin-bottom:20px;">
+  <div style="font-size:13px;opacity:.7;margin-bottom:4px;">Good day,</div>
+  <div style="font-size:24px;font-weight:800;">{{ patient.full_name }}</div>
+  <div style="font-size:13px;opacity:.7;margin-top:4px;">
+    {{ patient.hospital_number }}
+    {% if patient.blood_group %} · Blood Group: {{ patient.blood_group }}{% endif %}
+    {% if patient.genotype %} · Genotype: {{ patient.genotype }}{% endif %}
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-box">
+    <div class="num" style="color:var(--primary);">{{ lab_results.count }}</div>
+    <div class="lbl"><i class="fas fa-flask"></i> Lab Results</div>
+  </div>
+  <div class="stat-box">
+    <div class="num" style="color:var(--accent);">{{ active_meds.count }}</div>
+    <div class="lbl"><i class="fas fa-pills"></i> Active Meds</div>
+  </div>
+  <div class="stat-box">
+    <div class="num" style="color:{% if overdue_doses > 0 %}var(--danger){% else %}var(--success){% endif %};">{{ overdue_doses }}</div>
+    <div class="lbl"><i class="fas fa-clock"></i> Overdue Doses</div>
+  </div>
+  <div class="stat-box">
+    <div class="num" style="color:var(--primary);">{{ upcoming_appointments.count }}</div>
+    <div class="lbl"><i class="fas fa-calendar"></i> Upcoming Appts</div>
+  </div>
+</div>
+
+{% if overdue_doses > 0 %}
+<div class="alert alert-warning">
+  <i class="fas fa-exclamation-triangle"></i>
+  You have <strong>{{ overdue_doses }} overdue dose{{ overdue_doses|pluralize }}</strong> today.
+  <a href="{% url 'portal:medications' %}" style="font-weight:700;color:inherit;"> View Medications →</a>
+</div>
+{% endif %}
+
+<!-- Upcoming Appointments -->
+{% if upcoming_appointments %}
+<div class="card">
+  <div class="card-header">
+    <div class="icon" style="background:#EBF4FF;color:var(--primary);"><i class="fas fa-calendar-check"></i></div>
+    <h2>Upcoming Appointments</h2>
+    <a href="{% url 'portal:appointments' %}" class="see-all">See all →</a>
+  </div>
+  <div class="card-body" style="padding:0 20px;">
+    {% for appt in upcoming_appointments %}
+    <div class="list-item">
+      <div class="item-icon" style="background:#EBF4FF;color:var(--primary);">
+        <i class="fas {% if appt.appointment_type == 'teleconsult' %}fa-video{% else %}fa-stethoscope{% endif %}"></i>
+      </div>
+      <div class="item-body">
+        <div class="item-title">{{ appt.get_appointment_type_display }}</div>
+        <div class="item-sub">
+          {{ appt.appointment_date|date:"D, M d Y" }} at {{ appt.appointment_time|time:"g:i A" }}
+          {% if appt.doctor %} · Dr. {{ appt.doctor.get_full_name }}{% endif %}
+        </div>
+      </div>
+      <span class="badge badge-blue">{{ appt.get_status_display }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Recent Lab Results -->
+{% if lab_results %}
+<div class="card">
+  <div class="card-header">
+    <div class="icon" style="background:#E6FFFA;color:var(--accent);"><i class="fas fa-flask"></i></div>
+    <h2>Recent Lab Results</h2>
+    <a href="{% url 'portal:lab_results' %}" class="see-all">See all →</a>
+  </div>
+  <div class="card-body" style="padding:0 20px;">
+    {% for result in lab_results %}
+    <div class="list-item">
+      <div class="item-icon" style="background:#E6FFFA;color:var(--accent);"><i class="fas fa-vials"></i></div>
+      <div class="item-body">
+        <div class="item-title">{{ result.template.name|default:"Lab Result" }}</div>
+        <div class="item-sub">{{ result.ordered_at|date:"M d, Y" }}</div>
+      </div>
+      <a href="{% url 'portal:lab_result_detail' result.pk %}" class="btn-outline" style="padding:6px 12px;font-size:12px;">
+        View
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Today's Medications -->
+{% if active_meds %}
+<div class="card">
+  <div class="card-header">
+    <div class="icon" style="background:#FFF5F5;color:#E53E3E;"><i class="fas fa-pills"></i></div>
+    <h2>Active Medications</h2>
+    <a href="{% url 'portal:medications' %}" class="see-all">See timetable →</a>
+  </div>
+  <div class="card-body" style="padding:0 20px;">
+    {% for med in active_meds %}
+    <div class="list-item">
+      <div class="item-icon" style="background:#FFF5F5;color:#E53E3E;"><i class="fas fa-capsules"></i></div>
+      <div class="item-body">
+        <div class="item-title">{{ med.drug_name }} <span style="font-weight:400;font-size:13px;">{{ med.dosage }}</span></div>
+        <div class="item-sub">{{ med.get_frequency_display }} · Until {{ med.end_date|date:"M d, Y" }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Recent Records -->
+{% if recent_records %}
+<div class="card">
+  <div class="card-header">
+    <div class="icon" style="background:#F7FAFC;color:var(--muted);"><i class="fas fa-file-medical"></i></div>
+    <h2>Recent Medical Records</h2>
+    <a href="{% url 'portal:records' %}" class="see-all">See all →</a>
+  </div>
+  <div class="card-body" style="padding:0 20px;">
+    {% for record in recent_records %}
+    <div class="list-item">
+      <div class="item-icon" style="background:#F7FAFC;color:var(--muted);"><i class="fas fa-file-alt"></i></div>
+      <div class="item-body">
+        <div class="item-title">{{ record.title }}</div>
+        <div class="item-sub">{{ record.get_record_type_display }} · {{ record.uploaded_at|date:"M d, Y" }}</div>
+      </div>
+      <a href="{% url 'portal:record_detail' record.pk %}" class="btn-outline" style="padding:6px 12px;font-size:12px;">View</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if not lab_results and not active_meds and not upcoming_appointments and not recent_records %}
+<div style="text-align:center;padding:60px 20px;color:var(--muted);">
+  <i class="fas fa-heartbeat" style="font-size:48px;opacity:.2;display:block;margin-bottom:16px;"></i>
+  <div style="font-size:18px;font-weight:600;">Your portal is empty for now</div>
+  <p style="margin-top:8px;font-size:14px;">Results, medications, and appointments will appear here once added by your doctor.</p>
+</div>
+{% endif %}
+
+{% endblock %}

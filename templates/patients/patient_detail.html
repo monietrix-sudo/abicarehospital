@@ -33,9 +33,21 @@
       <i class="fas fa-user-shield"></i> Create Portal Login
     </a>
     {% else %}
-    <span style="font-size:12px;color:var(--success);padding:8px 14px;border:1px solid #9AE6B4;border-radius:20px;display:flex;align-items:center;gap:6px;">
-      <i class="fas fa-check-circle"></i> Portal: {{ patient.user_account.username }}
-    </span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:12px;color:var(--success);padding:6px 12px;border:1px solid #9AE6B4;border-radius:20px;display:flex;align-items:center;gap:6px;">
+        <i class="fas fa-check-circle"></i> Portal Active
+      </span>
+      <a href="{% url 'accounts:reset_patient_password' patient.hospital_number %}"
+         class="btn-abi-outline" style="padding:6px 12px;font-size:12px;color:#E67E22;border-color:#F6AD55;"
+         title="Reset patient portal password">
+        <i class="fas fa-key"></i> Reset Password
+      </a>
+      <a href="{% url 'accounts:print_patient_credentials' patient.hospital_number %}"
+         class="btn-abi-outline" style="padding:6px 12px;font-size:12px;"
+         target="_blank" title="Print credentials slip">
+        <i class="fas fa-print"></i>
+      </a>
+    </div>
     {% endif %}
     {% if user.is_admin_staff or user.role == 'receptionist' or user.is_doctor %}
     <button onclick="document.getElementById('deactivateModal').style.display='flex'" 

@@ -1,0 +1,243 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>{% block title %}{{ page_title }} — Patient Portal{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary:   #0A5C8A;
+      --accent:    #00C49A;
+      --dark:      #1A202C;
+      --muted:     #718096;
+      --border:    #E2E8F0;
+      --bg:        #F0F4F8;
+      --white:     #FFFFFF;
+      --danger:    #E53E3E;
+      --warning:   #D69E2E;
+      --success:   #38A169;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
+
+    /* ── Top Nav ─────────────────────────────── */
+    .portal-nav {
+      background: linear-gradient(135deg, #06304A, var(--primary));
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    }
+    .portal-nav .brand {
+      display: flex; align-items: center; gap: 10px;
+      color: #fff; font-weight: 700; font-size: 16px; text-decoration: none;
+    }
+    .portal-nav .brand img { height: 32px; }
+    .portal-nav .brand-badge {
+      background: var(--accent); color: #fff; font-size: 10px;
+      font-weight: 700; padding: 2px 8px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .portal-nav .nav-right { display: flex; align-items: center; gap: 16px; }
+    .portal-nav .user-pill {
+      display: flex; align-items: center; gap: 8px;
+      color: rgba(255,255,255,.85); font-size: 13px;
+    }
+    .portal-nav .user-pill .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px;
+    }
+    .logout-btn {
+      background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.2);
+      color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 13px;
+      font-weight: 600; text-decoration: none; transition: all .2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,.25); color: #fff; }
+
+    /* ── Bottom tab bar (mobile navigation) ─── */
+    .portal-tabs {
+      background: #fff; border-bottom: 1px solid var(--border);
+      display: flex; overflow-x: auto;
+      padding: 0 16px;
+    }
+    .portal-tabs a {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 10px 16px; font-size: 11px; font-weight: 600;
+      color: var(--muted); text-decoration: none; white-space: nowrap;
+      border-bottom: 3px solid transparent; transition: all .2s; gap: 4px;
+    }
+    .portal-tabs a i { font-size: 16px; }
+    .portal-tabs a.active, .portal-tabs a:hover {
+      color: var(--primary); border-bottom-color: var(--primary);
+    }
+
+    /* ── Main Content ────────────────────────── */
+    .portal-main { max-width: 960px; margin: 0 auto; padding: 24px 16px 80px; }
+
+    /* ── Cards ───────────────────────────────── */
+    .card {
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      border: 1px solid var(--border); margin-bottom: 16px; overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-header h2 { font-size: 15px; font-weight: 700; }
+    .card-header .icon {
+      width: 34px; height: 34px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .card-header .see-all {
+      margin-left: auto; font-size: 12px; color: var(--primary);
+      font-weight: 600; text-decoration: none;
+    }
+    .card-body { padding: 16px 20px; }
+
+    /* ── Stat cards ──────────────────────────── */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px; margin-bottom: 20px;
+    }
+    .stat-box {
+      background: #fff; border-radius: 12px; padding: 16px;
+      border: 1px solid var(--border); text-align: center;
+    }
+    .stat-box .num { font-size: 28px; font-weight: 800; }
+    .stat-box .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Badges ──────────────────────────────── */
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 700;
+    }
+    .badge-green  { background: #E6FFFA; color: var(--success); }
+    .badge-blue   { background: #EBF4FF; color: var(--primary); }
+    .badge-orange { background: #FFFBEB; color: var(--warning); }
+    .badge-red    { background: #FFF5F5; color: var(--danger); }
+    .badge-gray   { background: #F7FAFC; color: var(--muted); }
+
+    /* ── List items ──────────────────────────── */
+    .list-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-item .item-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .list-item .item-body { flex: 1; }
+    .list-item .item-title { font-weight: 600; font-size: 14px; }
+    .list-item .item-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Buttons ─────────────────────────────── */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #074266);
+      color: #fff; border: none; border-radius: 10px;
+      padding: 10px 20px; font-size: 14px; font-weight: 600;
+      font-family: inherit; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px; transition: all .2s;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(10,92,138,.3); color: #fff; }
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent), #009E7C);
+      color: #fff; border: none; border-radius: 10px;
+      padding: 10px 20px; font-size: 14px; font-weight: 600;
+      font-family: inherit; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-outline {
+      background: transparent; border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 8px 16px; font-size: 13px;
+      font-weight: 600; color: var(--dark); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+
+    /* ── Alerts ──────────────────────────────── */
+    .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; }
+    .alert-success { background: #E6FFFA; border-left: 4px solid var(--success); color: #22543D; }
+    .alert-error   { background: #FFF5F5; border-left: 4px solid var(--danger);  color: #742A2A; }
+    .alert-warning { background: #FFFBEB; border-left: 4px solid var(--warning); color: #744210; }
+    .alert-info    { background: #EBF4FF; border-left: 4px solid var(--primary); color: #1A365D; }
+
+    {% block extra_css %}{% endblock %}
+  </style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="portal-nav">
+  <a href="{% url 'portal:dashboard' %}" class="brand">
+    {% if HOSPITAL_LOGO %}
+    <img src="{% static HOSPITAL_LOGO %}" alt="{{ HOSPITAL_NAME }}" onerror="this.style.display='none'" />
+    {% endif %}
+    <span>{{ HOSPITAL_NAME }}</span>
+    <span class="brand-badge">Patient Portal</span>
+  </a>
+  <div class="nav-right">
+    <div class="user-pill">
+      <div class="avatar">{{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}</div>
+      <span>{{ request.user.first_name }}</span>
+    </div>
+    <a href="{% url 'accounts:logout' %}" class="logout-btn">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
+  </div>
+</nav>
+
+<!-- Tab Navigation -->
+<div class="portal-tabs">
+  <a href="{% url 'portal:dashboard' %}" class="{% if 'portal' in request.path and request.path == '/portal/' %}active{% endif %}">
+    <i class="fas fa-home"></i> Home
+  </a>
+  <a href="{% url 'portal:profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">
+    <i class="fas fa-user"></i> Profile
+  </a>
+  <a href="{% url 'portal:lab_results' %}" class="{% if 'lab-results' in request.path %}active{% endif %}">
+    <i class="fas fa-flask"></i> Lab Results
+  </a>
+  <a href="{% url 'portal:medications' %}" class="{% if 'medications' in request.path %}active{% endif %}">
+    <i class="fas fa-pills"></i> Medications
+  </a>
+  <a href="{% url 'portal:appointments' %}" class="{% if 'appointments' in request.path %}active{% endif %}">
+    <i class="fas fa-calendar"></i> Appointments
+  </a>
+  <a href="{% url 'portal:records' %}" class="{% if 'records' in request.path %}active{% endif %}">
+    <i class="fas fa-file-medical"></i> Records
+  </a>
+</div>
+
+<!-- Flash Messages -->
+{% if messages %}
+<div style="max-width:960px;margin:16px auto 0;padding:0 16px;">
+  {% for message in messages %}
+  <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}">
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Main Content -->
+<main class="portal-main">
+  {% block content %}{% endblock %}
+</main>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

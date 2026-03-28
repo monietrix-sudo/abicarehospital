@@ -11,10 +11,10 @@
     <i class="fas fa-arrow-left"></i> Cancel
   </a>
 </div>
-
+ 
 <div class="row g-4 justify-content-center">
   <div class="col-lg-7">
-
+ 
     <!-- Patient summary -->
     <div class="card-abi mb-4" style="border-left:4px solid var(--accent);">
       <div class="card-body-abi">
@@ -36,19 +36,19 @@
         </div>
       </div>
     </div>
-
+ 
     <div class="card-abi">
       <div class="card-header-abi">
         <i class="fas fa-user-shield" style="color:var(--accent);font-size:18px;"></i>
         <h2>Portal Account Details</h2>
       </div>
       <div class="card-body-abi">
-
+ 
         <div style="background:#EBF4FF;border:1px solid #BEE3F8;border-left:4px solid #0A5C8A;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#2C5282;">
           <i class="fas fa-info-circle"></i>
           Once created, the patient can log in and view their own records, lab results, medications, and appointments that have been marked visible.
         </div>
-
+ 
         <form method="post" class="form-abi">
           {% csrf_token %}
           <div class="row g-3">
@@ -109,7 +109,7 @@
   </div>
 </div>
 {% endblock %}
-
+ 
 {% block extra_js %}
 <script>
 function toggle(inputId, iconId) {
