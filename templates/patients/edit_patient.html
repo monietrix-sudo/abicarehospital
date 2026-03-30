@@ -1,135 +1,349 @@
 {% extends "base/base.html" %}
 {% block content %}
+
 <div class="page-header">
   <div class="page-header-left">
     <h1>Edit Patient</h1>
     <div class="breadcrumb-abi">
-      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
       <a href="{% url 'patient_detail:detail' patient.hospital_number %}">{{ patient.full_name }}</a> › Edit
     </div>
   </div>
-  <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-outline"><i class="fas fa-arrow-left"></i> Cancel</a>
+  <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-outline">
+    <i class="fas fa-arrow-left"></i> Cancel
+  </a>
 </div>
 
+{% if patient.has_pending_fields %}
+<div style="background:#FFF5F5;border:1px solid #FED7D7;border-left:4px solid #E53E3E;
+            border-radius:8px;padding:13px 16px;margin-bottom:20px;font-size:13px;color:#742A2A;">
+  <i class="fas fa-exclamation-triangle"></i>
+  <strong>This record has PENDING fields from import.</strong>
+  Fields highlighted in red below need to be filled in.
+  They will be cleared automatically once you save a real value.
+  <br/><strong>Pending fields:</strong> {{ patient.pending_field_list }}
+</div>
+{% endif %}
+
 <form method="post" enctype="multipart/form-data" class="form-abi">
-  {% csrf_token %}
-  <div class="row g-4">
-    <div class="col-12">
-      <div class="card-abi">
-        <div class="card-header-abi"><h2>Personal Information</h2></div>
-        <div class="card-body-abi">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label">First Name *</label>
-              <input type="text" name="first_name" class="form-control" value="{{ patient.first_name }}" required />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Middle Name</label>
-              <input type="text" name="middle_name" class="form-control" value="{{ patient.middle_name }}" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Last Name *</label>
-              <input type="text" name="last_name" class="form-control" value="{{ patient.last_name }}" required />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Phone Number *</label>
-              <input type="tel" name="phone_number" class="form-control" value="{{ patient.phone_number }}" required />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Alternate Phone</label>
-              <input type="tel" name="alt_phone_number" class="form-control" value="{{ patient.alt_phone_number }}" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Email</label>
-              <input type="email" name="email" class="form-control" value="{{ patient.email }}" />
-            </div>
-            <div class="col-12">
-              <label class="form-label">Address</label>
-              <textarea name="address" class="form-control" rows="2">{{ patient.address }}</textarea>
-            </div>
-            <div class="col-md-4"><label class="form-label">City</label><input type="text" name="city" class="form-control" value="{{ patient.city }}" /></div>
-            <div class="col-md-4"><label class="form-label">State</label><input type="text" name="state" class="form-control" value="{{ patient.state }}" /></div>
-            <div class="col-md-4"><label class="form-label">Occupation</label><input type="text" name="occupation" class="form-control" value="{{ patient.occupation }}" /></div>
-          </div>
-        </div>
-      </div>
-    </div>
+{% csrf_token %}
 
-    <div class="col-md-6">
-      <div class="card-abi h-100">
-        <div class="card-header-abi"><h2>Medical Info</h2></div>
-        <div class="card-body-abi">
-          <div class="row g-3">
-            <div class="col-6">
-              <label class="form-label">Blood Group</label>
-              <select name="blood_group" class="form-select">
-                <option value="">Unknown</option>
-                <option value="A+"  {% if patient.blood_group == "A+"  %}selected{% endif %}>A+</option>
-                <option value="A-"  {% if patient.blood_group == "A-"  %}selected{% endif %}>A-</option>
-                <option value="B+"  {% if patient.blood_group == "B+"  %}selected{% endif %}>B+</option>
-                <option value="B-"  {% if patient.blood_group == "B-"  %}selected{% endif %}>B-</option>
-                <option value="AB+" {% if patient.blood_group == "AB+" %}selected{% endif %}>AB+</option>
-                <option value="AB-" {% if patient.blood_group == "AB-" %}selected{% endif %}>AB-</option>
-                <option value="O+"  {% if patient.blood_group == "O+"  %}selected{% endif %}>O+</option>
-                <option value="O-"  {% if patient.blood_group == "O-"  %}selected{% endif %}>O-</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Genotype</label>
-              <select name="genotype" class="form-select">
-                <option value="">Unknown</option>
-                <option value="AA" {% if patient.genotype == "AA" %}selected{% endif %}>AA</option>
-                <option value="AS" {% if patient.genotype == "AS" %}selected{% endif %}>AS</option>
-                <option value="SS" {% if patient.genotype == "SS" %}selected{% endif %}>SS</option>
-                <option value="SC" {% if patient.genotype == "SC" %}selected{% endif %}>SC</option>
-                <option value="AC" {% if patient.genotype == "AC" %}selected{% endif %}>AC</option>
-              </select>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Allergies</label>
-              <textarea name="allergies" class="form-control" rows="2">{{ patient.allergies }}</textarea>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Chronic Conditions</label>
-              <textarea name="chronic_conditions" class="form-control" rows="2">{{ patient.chronic_conditions }}</textarea>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Assigned Doctor</label>
-              <select name="assigned_doctor" class="form-select">
-                <option value="">— Unassigned —</option>
-                {% for doc in doctors %}
-                <option value="{{ doc.id }}" {% if patient.assigned_doctor_id == doc.id %}selected{% endif %}>Dr. {{ doc.get_full_name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Update Photo</label>
-              <input type="file" name="photo" class="form-control" accept="image/*" />
-              {% if patient.photo %}<div style="margin-top:6px;"><img src="{{ patient.photo.url }}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;" /></div>{% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-6">
-      <div class="card-abi h-100">
-        <div class="card-header-abi"><h2>Next of Kin</h2></div>
-        <div class="card-body-abi">
-          <div class="row g-3">
-            <div class="col-12"><label class="form-label">Full Name</label><input type="text" name="nok_name" class="form-control" value="{{ patient.nok_name }}" /></div>
-            <div class="col-md-6"><label class="form-label">Relationship</label><input type="text" name="nok_relationship" class="form-control" value="{{ patient.nok_relationship }}" /></div>
-            <div class="col-md-6"><label class="form-label">Phone</label><input type="tel" name="nok_phone" class="form-control" value="{{ patient.nok_phone }}" /></div>
-            <div class="col-12"><label class="form-label">Address</label><textarea name="nok_address" class="form-control" rows="4">{{ patient.nok_address }}</textarea></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12" style="display:flex;gap:12px;justify-content:flex-end;">
-      <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-outline">Cancel</a>
-      <button type="submit" class="btn-abi-primary"><i class="fas fa-save"></i> Save Changes</button>
-    </div>
+<!-- SECTION 1: CORE IDENTITY -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi" style="background:linear-gradient(135deg,var(--primary),#074266);">
+    <i class="fas fa-user" style="color:#fff;"></i>
+    <h2 style="color:#fff;">1. Personal Identity</h2>
   </div>
+  <div class="card-body-abi"><div class="row g-3">
+
+    <div class="col-md-3">
+      <label class="form-label">First Name <span style="color:#E53E3E;">*</span></label>
+      <input type="text" name="first_name" class="form-control" required
+             value="{{ patient.first_name }}"
+             style="{% if 'first_name' in patient.pending_fields %}border-color:#E53E3E;background:#FFF5F5;{% endif %}" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Middle Name</label>
+      <input type="text" name="middle_name" class="form-control" value="{{ patient.middle_name }}" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Last Name <span style="color:#E53E3E;">*</span></label>
+      <input type="text" name="last_name" class="form-control" required
+             value="{{ patient.last_name }}"
+             style="{% if 'last_name' in patient.pending_fields %}border-color:#E53E3E;background:#FFF5F5;{% endif %}" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Preferred Name / Nickname</label>
+      <input type="text" name="preferred_name" class="form-control" value="{{ patient.preferred_name }}" />
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">
+        Date of Birth <span style="color:#E53E3E;">*</span>
+        <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(editing this updates age)</span>
+      </label>
+      <input type="date" name="date_of_birth" class="form-control" required
+             value="{{ patient.date_of_birth|date:'Y-m-d' }}"
+             style="{% if 'date_of_birth' in patient.pending_fields %}border-color:#E53E3E;background:#FFF5F5;{% endif %}" />
+      {% if patient.age %}
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+        Current age: <strong>{{ patient.age }} years</strong> — updates automatically when you change the date
+      </div>
+      {% endif %}
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Gender <span style="color:#E53E3E;">*</span></label>
+      <select name="gender" class="form-select" required
+              style="{% if 'gender' in patient.pending_fields %}border-color:#E53E3E;background:#FFF5F5;{% endif %}">
+        <option value="">— Select —</option>
+        <option value="M" {% if patient.gender == 'M' %}selected{% endif %}>Male</option>
+        <option value="F" {% if patient.gender == 'F' %}selected{% endif %}>Female</option>
+        <option value="O" {% if patient.gender == 'O' %}selected{% endif %}>Other / Prefer not to say</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Marital Status</label>
+      <select name="marital_status" class="form-select">
+        <option value="">— Select —</option>
+        <option value="single"    {% if patient.marital_status == 'single' %}selected{% endif %}>Single</option>
+        <option value="married"   {% if patient.marital_status == 'married' %}selected{% endif %}>Married</option>
+        <option value="divorced"  {% if patient.marital_status == 'divorced' %}selected{% endif %}>Divorced</option>
+        <option value="widowed"   {% if patient.marital_status == 'widowed' %}selected{% endif %}>Widowed</option>
+        <option value="separated" {% if patient.marital_status == 'separated' %}selected{% endif %}>Separated</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Religion</label>
+      <select name="religion" class="form-select">
+        <option value="">— Select —</option>
+        <option value="christianity" {% if patient.religion == 'christianity' %}selected{% endif %}>Christianity</option>
+        <option value="islam"        {% if patient.religion == 'islam' %}selected{% endif %}>Islam</option>
+        <option value="traditional"  {% if patient.religion == 'traditional' %}selected{% endif %}>Traditional</option>
+        <option value="other"        {% if patient.religion == 'other' %}selected{% endif %}>Other</option>
+        <option value="none"         {% if patient.religion == 'none' %}selected{% endif %}>None</option>
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Occupation</label>
+      <input type="text" name="occupation" class="form-control" value="{{ patient.occupation }}" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Primary Language</label>
+      <input type="text" name="primary_language" class="form-control" value="{{ patient.primary_language }}" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Patient Photo</label>
+      {% if patient.photo %}
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <img src="{{ patient.photo.url }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--border);" />
+        <span style="font-size:12px;color:var(--text-muted);">Upload new to replace</span>
+      </div>
+      {% endif %}
+      <input type="file" name="photo" class="form-control" accept="image/*" />
+    </div>
+
+  </div></div>
+</div>
+
+<!-- SECTION 2: CONTACT -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi">
+    <i class="fas fa-phone" style="color:var(--primary);"></i>
+    <h2>2. Contact Information</h2>
+  </div>
+  <div class="card-body-abi"><div class="row g-3">
+
+    <div class="col-md-4">
+      <label class="form-label">Phone Number <span style="color:#E53E3E;">*</span></label>
+      <input type="tel" name="phone_number" class="form-control" required
+             value="{{ patient.phone_number }}"
+             style="{% if 'phone_number' in patient.pending_fields %}border-color:#E53E3E;background:#FFF5F5;{% endif %}" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Alternative Phone</label>
+      <input type="tel" name="alt_phone_number" class="form-control" value="{{ patient.alt_phone_number }}" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Email Address</label>
+      <input type="email" name="email" class="form-control" value="{{ patient.email }}" />
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">Current Address</label>
+      <textarea name="address" class="form-control" rows="2">{{ patient.address }}</textarea>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">City</label>
+      <input type="text" name="city" class="form-control" value="{{ patient.city }}" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">State</label>
+      <input type="text" name="state" class="form-control" value="{{ patient.state }}" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">LGA</label>
+      <input type="text" name="lga" class="form-control" value="{{ patient.lga }}" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Hometown / Village</label>
+      <input type="text" name="hometown" class="form-control" value="{{ patient.hometown }}" />
+    </div>
+
+  </div></div>
+</div>
+
+<!-- SECTION 3: ORIGIN -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi">
+    <i class="fas fa-map-marker-alt" style="color:var(--primary);"></i>
+    <h2>3. Origin &amp; Nationality</h2>
+  </div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">State of Origin</label>
+      <input type="text" name="state_of_origin" class="form-control" value="{{ patient.state_of_origin }}" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Nationality</label>
+      <input type="text" name="nationality" class="form-control" value="{{ patient.nationality|default:'Nigerian' }}" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Disabilities / Special Needs</label>
+      <input type="text" name="disabilities" class="form-control" value="{{ patient.disabilities }}" />
+    </div>
+  </div></div>
+</div>
+
+<!-- SECTION 4: MEDICAL -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi">
+    <i class="fas fa-heartbeat" style="color:#E53E3E;"></i>
+    <h2>4. Medical Information</h2>
+  </div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-3">
+      <label class="form-label">Blood Group</label>
+      <select name="blood_group" class="form-select">
+        <option value="">— Unknown —</option>
+        {% for val, label in blood_group_choices %}
+        <option value="{{ val }}" {% if patient.blood_group == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Genotype</label>
+      <select name="genotype" class="form-select">
+        <option value="">— Unknown —</option>
+        {% for val, label in genotype_choices %}
+        <option value="{{ val }}" {% if patient.genotype == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Assign Doctor</label>
+      <select name="assigned_doctor" class="form-select">
+        <option value="">— None —</option>
+        {% for doc in doctors %}
+        <option value="{{ doc.pk }}" {% if patient.assigned_doctor == doc %}selected{% endif %}>
+          Dr. {{ doc.get_full_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Current Ward</label>
+      <input type="text" name="ward" class="form-control" value="{{ patient.ward }}" placeholder="Ward name if admitted" />
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Known Allergies</label>
+      <textarea name="allergies" class="form-control" rows="2">{{ patient.allergies }}</textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Chronic Conditions / Past Medical History</label>
+      <textarea name="chronic_conditions" class="form-control" rows="2">{{ patient.chronic_conditions }}</textarea>
+    </div>
+  </div></div>
+</div>
+
+<!-- SECTION 5: INSURANCE -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi">
+    <i class="fas fa-shield-alt" style="color:var(--accent);"></i>
+    <h2>5. Insurance / HMO</h2>
+  </div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-3">
+      <label class="form-label">Insurance Provider</label>
+      <input type="text" name="insurance_provider" class="form-control" value="{{ patient.insurance_provider }}" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Insurance Number</label>
+      <input type="text" name="insurance_number" class="form-control" value="{{ patient.insurance_number }}" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">NHIS Number</label>
+      <input type="text" name="nhis_number" class="form-control" value="{{ patient.nhis_number }}" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">HMO Name</label>
+      <input type="text" name="hmo_name" class="form-control" value="{{ patient.hmo_name }}" />
+    </div>
+  </div></div>
+</div>
+
+<!-- SECTION 6: NEXT OF KIN -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi">
+    <i class="fas fa-user-friends" style="color:var(--primary);"></i>
+    <h2>6. Next of Kin</h2>
+  </div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">Full Name</label>
+      <input type="text" name="nok_name" class="form-control" value="{{ patient.nok_name }}" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Relationship to Patient</label>
+      <select name="nok_relationship" class="form-select">
+        <option value="">— Select —</option>
+        <option value="father"   {% if patient.nok_relationship == 'father' %}selected{% endif %}>Father</option>
+        <option value="mother"   {% if patient.nok_relationship == 'mother' %}selected{% endif %}>Mother</option>
+        <option value="spouse"   {% if patient.nok_relationship == 'spouse' %}selected{% endif %}>Spouse</option>
+        <option value="sibling"  {% if patient.nok_relationship == 'sibling' %}selected{% endif %}>Sibling</option>
+        <option value="child"    {% if patient.nok_relationship == 'child' %}selected{% endif %}>Child</option>
+        <option value="guardian" {% if patient.nok_relationship == 'guardian' %}selected{% endif %}>Guardian</option>
+        <option value="friend"   {% if patient.nok_relationship == 'friend' %}selected{% endif %}>Friend</option>
+        <option value="other"    {% if patient.nok_relationship == 'other' %}selected{% endif %}>Other</option>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Phone</label>
+      <input type="tel" name="nok_phone" class="form-control" value="{{ patient.nok_phone }}" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Alternative Phone</label>
+      <input type="tel" name="nok_alt_phone" class="form-control" value="{{ patient.nok_alt_phone }}" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Email</label>
+      <input type="email" name="nok_email" class="form-control" value="{{ patient.nok_email }}" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Occupation</label>
+      <input type="text" name="nok_occupation" class="form-control" value="{{ patient.nok_occupation }}" />
+    </div>
+    <div class="col-12">
+      <label class="form-label">Address</label>
+      <textarea name="nok_address" class="form-control" rows="2">{{ patient.nok_address }}</textarea>
+    </div>
+  </div></div>
+</div>
+
+<!-- SECTION 7: PREVIOUS RECORDS -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi">
+    <i class="fas fa-id-card" style="color:var(--text-muted);"></i>
+    <h2>7. Previous Records</h2>
+  </div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Old / Previous Hospital Number</label>
+      <input type="text" name="legacy_hospital_number" class="form-control"
+             value="{{ patient.legacy_hospital_number }}" />
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+        Current system number: <strong>{{ patient.hospital_number }}</strong> — this cannot be changed.
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- Submit -->
+<div style="display:flex;gap:12px;justify-content:flex-end;padding-bottom:40px;">
+  <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-outline">Cancel</a>
+  <button type="submit" class="btn-abi-primary" style="padding:12px 32px;font-size:15px;">
+    <i class="fas fa-save"></i> Save All Changes
+  </button>
+</div>
+
 </form>
 {% endblock %}

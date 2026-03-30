@@ -275,12 +275,21 @@ def _run_import(session, uploaded_file, request):
                 continue
 
         # ── Blood group / genotype ───────────────────────────────────
-        blood_group = rv.get('blood_group', '').upper()
+        blood_group = rv.get('blood_group', '').strip().upper()
         if blood_group and blood_group not in BLOOD_GROUPS:
             blood_group = ''
-        genotype = rv.get('genotype', '').upper()
+        genotype = rv.get('genotype', '').strip().upper()
         if genotype not in GENOTYPES:
             genotype = ''
+
+        # ── Normalise choice fields to lowercase ─────────────────────
+        marital_raw = rv.get('marital_status', '').strip().lower()
+        valid_marital = ['single','married','divorced','widowed','separated']
+        marital_status = marital_raw if marital_raw in valid_marital else ''
+
+        religion_raw = rv.get('religion', '').strip().lower()
+        valid_religion = ['christianity','islam','traditional','other','none']
+        religion = religion_raw if religion_raw in valid_religion else ''
 
         # ── Create patient ───────────────────────────────────────────
         hospital_number = _next_number(year)
@@ -302,9 +311,9 @@ def _run_import(session, uploaded_file, request):
                 hometown=rv.get('hometown', ''),
                 state_of_origin=rv.get('state_of_origin', ''),
                 nationality=rv.get('nationality', 'Nigerian'),
-                religion=rv.get('religion', ''),
+                religion=religion,
                 occupation=rv.get('occupation', ''),
-                marital_status=rv.get('marital_status', ''),
+                marital_status=marital_status,
                 blood_group=blood_group,
                 genotype=genotype,
                 allergies=rv.get('allergies', ''),

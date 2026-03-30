@@ -308,49 +308,122 @@ def add_patient_view(request):
 @login_required
 @role_required('admin', 'receptionist', 'doctor', 'nurse')
 def edit_patient_view(request, hospital_number):
-    """Update patient information."""
+    """
+    Update every field on a patient record.
+    Age is auto-calculated from date_of_birth — editing DOB updates age automatically.
+    PENDING values are cleared when a real value is entered.
+    """
     patient = get_object_or_404(Patient, hospital_number=hospital_number)
 
     if request.method == 'POST':
-        # Update all editable fields
-        patient.first_name = request.POST.get('first_name', patient.first_name).strip()
-        patient.middle_name = request.POST.get('middle_name', patient.middle_name).strip()
-        patient.last_name = request.POST.get('last_name', patient.last_name).strip()
-        patient.phone_number = request.POST.get('phone_number', patient.phone_number).strip()
-        patient.alt_phone_number = request.POST.get('alt_phone_number', '').strip()
-        patient.email = request.POST.get('email', '').strip()
-        patient.address = request.POST.get('address', '').strip()
-        patient.city = request.POST.get('city', '').strip()
-        patient.state = request.POST.get('state', '').strip()
-        patient.blood_group = request.POST.get('blood_group', '')
-        patient.genotype = request.POST.get('genotype', '')
-        patient.allergies = request.POST.get('allergies', '').strip()
-        patient.chronic_conditions = request.POST.get('chronic_conditions', '').strip()
-        patient.occupation = request.POST.get('occupation', '').strip()
-        patient.nok_name = request.POST.get('nok_name', '').strip()
-        patient.nok_relationship = request.POST.get('nok_relationship', '').strip()
-        patient.nok_phone = request.POST.get('nok_phone', '').strip()
-        patient.nok_address = request.POST.get('nok_address', '').strip()
+        def g(field, default=''):
+            return request.POST.get(field, default).strip()
 
-        # Update assigned doctor
-        doctor_id = request.POST.get('assigned_doctor')
+        # ── Core Identity ─────────────────────────────────────────────
+        patient.first_name     = g('first_name') or patient.first_name
+        patient.middle_name    = g('middle_name')
+        patient.preferred_name = g('preferred_name')
+        patient.last_name      = g('last_name') or patient.last_name
+        patient.gender         = g('gender') or patient.gender
+        patient.marital_status = g('marital_status')
+        patient.religion       = g('religion')
+        patient.occupation     = g('occupation')
+        patient.primary_language = g('primary_language')
+
+        # DOB — editing this automatically updates age (age is a @property)
+        dob_raw = g('date_of_birth')
+        if dob_raw:
+            try:
+                from datetime import datetime
+                patient.date_of_birth = datetime.strptime(dob_raw, '%Y-%m-%d').date()
+            except ValueError:
+                messages.error(request, f"Invalid date format: {dob_raw}. Use YYYY-MM-DD.")
+                doctors = User.objects.filter(role='doctor', is_active=True)
+                return render(request, 'patients/edit_patient.html', {
+                    'page_title': f"Edit: {patient.full_name}",
+                    'patient': patient,
+                    'doctors': doctors,
+                })
+
+        # ── Contact ───────────────────────────────────────────────────
+        patient.phone_number     = g('phone_number') or patient.phone_number
+        patient.alt_phone_number = g('alt_phone_number')
+        patient.email            = g('email')
+        patient.address          = g('address')
+        patient.city             = g('city')
+        patient.state            = g('state')
+        patient.lga              = g('lga')
+        patient.hometown         = g('hometown')
+
+        # ── Origin ────────────────────────────────────────────────────
+        patient.state_of_origin = g('state_of_origin')
+        patient.nationality     = g('nationality') or 'Nigerian'
+        patient.disabilities    = g('disabilities')
+
+        # ── Medical ───────────────────────────────────────────────────
+        patient.blood_group        = g('blood_group')
+        patient.genotype           = g('genotype')
+        patient.allergies          = g('allergies')
+        patient.chronic_conditions = g('chronic_conditions')
+        patient.ward               = g('ward')
+
+        # ── Insurance ─────────────────────────────────────────────────
+        patient.insurance_provider = g('insurance_provider')
+        patient.insurance_number   = g('insurance_number')
+        patient.nhis_number        = g('nhis_number')
+        patient.hmo_name           = g('hmo_name')
+
+        # ── Next of Kin ───────────────────────────────────────────────
+        patient.nok_name         = g('nok_name')
+        patient.nok_relationship = g('nok_relationship')
+        patient.nok_phone        = g('nok_phone')
+        patient.nok_alt_phone    = g('nok_alt_phone')
+        patient.nok_address      = g('nok_address')
+        patient.nok_email        = g('nok_email')
+        patient.nok_occupation   = g('nok_occupation')
+
+        # ── Previous Record ───────────────────────────────────────────
+        patient.legacy_hospital_number = g('legacy_hospital_number')
+
+        # ── Assigned Doctor ───────────────────────────────────────────
+        doctor_id = g('assigned_doctor')
         if doctor_id:
-            patient.assigned_doctor_id = doctor_id
+            try:
+                patient.assigned_doctor_id = int(doctor_id)
+            except (ValueError, TypeError):
+                patient.assigned_doctor = None
+        else:
+            patient.assigned_doctor = None
 
-        # Update photo if new one uploaded
+        # ── Photo ─────────────────────────────────────────────────────
         if 'photo' in request.FILES:
             patient.photo = request.FILES['photo']
 
+        # ── Clear PENDING flags for fields that now have real values ──
+        if patient.has_pending_fields:
+            still_pending = []
+            for field in patient.pending_fields:
+                val = getattr(patient, field, '')
+                if str(val).upper() == 'PENDING' or not val:
+                    still_pending.append(field)
+            patient.pending_field_list = ','.join(still_pending)
+            patient.has_pending_fields = bool(still_pending)
+
         patient.save()
-        log_action(request.user, 'UPDATE', request, f"Updated patient: {patient.hospital_number}")
-        messages.success(request, "Patient record updated successfully.")
-        return redirect('patient_detail:detail', hospital_number=hospital_number)
+        log_action(request.user, 'UPDATE', request,
+                   f"Updated patient: {patient.hospital_number}")
+        messages.success(request,
+            f"{patient.full_name} updated successfully.")
+        return redirect('patient_detail:detail',
+                        hospital_number=hospital_number)
 
     doctors = User.objects.filter(role='doctor', is_active=True)
     return render(request, 'patients/edit_patient.html', {
-        'page_title': f"Edit: {patient.full_name}",
-        'patient': patient,
-        'doctors': doctors,
+        'page_title':         f"Edit Patient — {patient.full_name}",
+        'patient':            patient,
+        'doctors':            doctors,
+        'blood_group_choices': Patient.BLOOD_GROUP_CHOICES,
+        'genotype_choices':    Patient.GENOTYPE_CHOICES,
     })
 
 
