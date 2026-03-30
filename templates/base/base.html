@@ -624,8 +624,17 @@
       <span class="nav-icon"><i class="fas fa-pills"></i></span> Medications
     </a>
     <a href="{% url 'records:list' %}"
-       class="sidebar-link {% if 'records' in request.path %}active{% endif %}">
+       class="sidebar-link {% if 'records' in request.path and 'clinical' not in request.path %}active{% endif %}">
       <span class="nav-icon"><i class="fas fa-file-medical"></i></span> Medical Records
+    </a>
+    <a href="{% url 'patient_detail:list' %}"
+       class="sidebar-link {% if 'clinical' in request.path %}active{% endif %}"
+       title="Go to a patient to view clinical records">
+      <span class="nav-icon"><i class="fas fa-notes-medical"></i></span> Clinical Records
+    </a>
+    <a href="{% url 'billing:list' %}"
+       class="sidebar-link {% if 'billing' in request.path %}active{% endif %}">
+      <span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Billing
     </a>
     <a href="{% url 'teleconsult:links' %}"
        class="sidebar-link {% if 'teleconsult' in request.path %}active{% endif %}">

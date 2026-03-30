@@ -1,0 +1,27 @@
+{% load static %}<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Nurse Portal — AbiCare</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}body{font-family:'DM Sans',sans-serif;background:linear-gradient(135deg,#276749,#00856A);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{background:#fff;border-radius:20px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.4);}
+.top{padding:32px;text-align:center;background:linear-gradient(135deg,#276749,#00C49A);}
+.top .icon{font-size:48px;margin-bottom:12px;}
+.top h1{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;}
+.top p{font-size:13px;color:rgba(255,255,255,.75);}
+.body{padding:28px;}
+label{display:block;font-size:13px;font-weight:600;color:#2D3748;margin-bottom:6px;}
+input{width:100%;padding:12px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:15px;font-family:inherit;outline:none;margin-bottom:14px;transition:all .2s;}
+input:focus{border-color:#00856A;box-shadow:0 0 0 3px rgba(0,133,106,.1);}
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#276749,#1C4532);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.alert{background:#FFF5F5;border-left:4px solid #E53E3E;border-radius:8px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:#9B2C2C;}
+.links{text-align:center;margin-top:16px;font-size:13px;color:#718096;}
+.links a{color:#00856A;font-weight:600;text-decoration:none;}
+</style></head><body><div class="card">
+<div class="top"><div class="icon">👩‍⚕️</div><h1>Nurse Portal</h1><p>AbiCare Hospital EHR System</p></div>
+<div class="body">
+{% if messages %}{% for m in messages %}<div class="alert">{{ m }}</div>{% endfor %}{% endif %}
+<form method="post">{% csrf_token %}
+<label>Username</label><input type="text" name="username" autofocus required />
+<label>Password</label><input type="password" name="password" required />
+<button type="submit" class="btn">Sign In to Nurse Portal</button>
+</form>
+<div class="links"><p style="margin-top:12px;">Other portals: <a href="/doctor-portal/login/">Doctor</a> · <a href="/reception-portal/login/">Reception</a></p></div>
+</div></div></body></html>

@@ -1,0 +1,49 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div style="background:linear-gradient(135deg,#744210,#D69E2E);border-radius:14px;padding:24px;color:#fff;margin-bottom:24px;">
+  <div style="font-size:13px;opacity:.7;">Reception Portal</div>
+  <div style="font-size:26px;font-weight:800;">{{ request.user.get_full_name|default:request.user.username }}</div>
+  <div style="font-size:13px;opacity:.7;margin-top:4px;">{{ today|date:"l, F j, Y" }}</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:24px;">
+  <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-users-cog"></i></div>
+    <div><div class="stat-value">{{ today_queue }}</div><div class="stat-label">In Queue Today</div></div></div>
+  <div class="stat-card"><div class="stat-icon teal"><i class="fas fa-calendar-check"></i></div>
+    <div><div class="stat-value">{{ today_appts }}</div><div class="stat-label">Today's Appointments</div></div></div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card-abi">
+      <div class="card-header-abi"><i class="fas fa-hospital-user" style="color:var(--primary);"></i>
+        <h2>Recent Patients</h2>
+        <a href="{% url 'patients:add_patient' %}" class="btn-abi-primary" style="margin-left:auto;padding:6px 14px;font-size:13px;">
+          <i class="fas fa-user-plus"></i> Register
+        </a>
+      </div>
+      <div class="card-body-abi" style="padding:0;">
+        {% for patient in recent_patients %}
+        <a href="{% url 'patient_detail:detail' patient.hospital_number %}"
+           style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">
+            {{ patient.first_name|first }}{{ patient.last_name|first }}</div>
+          <div style="flex:1;"><div style="font-weight:600;">{{ patient.full_name }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ patient.hospital_number }}</div></div>
+          <i class="fas fa-chevron-right" style="color:var(--text-muted);font-size:12px;"></i>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card-abi">
+      <div class="card-header-abi"><h2>Quick Actions</h2></div>
+      <div class="card-body-abi" style="display:flex;flex-direction:column;gap:10px;">
+        <a href="{% url 'patients:add_patient' %}" class="btn-abi-primary" style="justify-content:center;"><i class="fas fa-user-plus"></i> Register Patient</a>
+        <a href="{% url 'appointments:book' %}" class="btn-abi-outline" style="justify-content:center;"><i class="fas fa-calendar-plus"></i> Book Appointment</a>
+        <a href="{% url 'queue:add' %}" class="btn-abi-outline" style="justify-content:center;"><i class="fas fa-users-cog"></i> Add to Queue</a>
+        <a href="{% url 'imports:import_patients' %}" class="btn-abi-outline" style="justify-content:center;"><i class="fas fa-file-excel"></i> Import Patients</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

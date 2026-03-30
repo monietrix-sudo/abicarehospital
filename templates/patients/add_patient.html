@@ -3,213 +3,180 @@
 <div class="page-header">
   <div class="page-header-left">
     <h1>Register New Patient</h1>
-    <div class="breadcrumb-abi">
-      <a href="{% url 'patients:dashboard' %}">Dashboard</a> ›
-      <a href="{% url 'patient_detail:list' %}">Patients</a> › Register
-    </div>
+    <div class="breadcrumb-abi"><a href="{% url 'patient_detail:list' %}">Patients</a> › Register</div>
   </div>
+  <a href="{% url 'patient_detail:list' %}" class="btn-abi-outline"><i class="fas fa-arrow-left"></i> Back</a>
 </div>
 
 <form method="post" enctype="multipart/form-data" class="form-abi">
-  {% csrf_token %}
-  <div class="row g-4">
+{% csrf_token %}
 
-    <!-- Personal Information -->
-    <div class="col-12">
-      <div class="card-abi">
-        <div class="card-header-abi"><h2>Personal Information</h2></div>
-        <div class="card-body-abi">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Old/Previous Hospital Number <span style="font-weight:400;color:var(--text-muted);">(if patient was registered before this system)</span></label>
-              <input type="text" name="legacy_hospital_number" class="form-control"
-                     placeholder="e.g. PT/2024/0045 or leave blank for new patients" />
-              <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
-                A new ABI number will be auto-generated. Both numbers will be stored and searchable.
-              </div>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">First Name *</label>
-              <input type="text" name="first_name" class="form-control" required />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Middle Name</label>
-              <input type="text" name="middle_name" class="form-control" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Last Name *</label>
-              <input type="text" name="last_name" class="form-control" required />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Date of Birth *</label>
-              <input type="date" name="date_of_birth" class="form-control" required />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Gender *</label>
-              <select name="gender" class="form-select" required>
-                <option value="">— Select —</option>
-                <option value="M">Male</option>
-                <option value="F">Female</option>
-                <option value="O">Other</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Marital Status</label>
-              <select name="marital_status" class="form-select">
-                <option value="">— Select —</option>
-                <option value="single">Single</option>
-                <option value="married">Married</option>
-                <option value="divorced">Divorced</option>
-                <option value="widowed">Widowed</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Occupation</label>
-              <input type="text" name="occupation" class="form-control" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Nationality</label>
-              <input type="text" name="nationality" class="form-control" value="Nigerian" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">State of Origin</label>
-              <input type="text" name="state_of_origin" class="form-control" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Patient Photo</label>
-              <input type="file" name="photo" class="form-control" accept="image/*" />
-              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">JPG, PNG up to 10MB</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+<div style="background:#FFF5F5;border-left:4px solid #E53E3E;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#742A2A;">
+  <i class="fas fa-asterisk"></i> <strong>Red asterisk = Required.</strong> All other fields can be filled in later by editing the patient profile.
+</div>
 
-    <!-- Contact Details -->
-    <div class="col-12">
-      <div class="card-abi">
-        <div class="card-header-abi"><h2>Contact Details</h2></div>
-        <div class="card-body-abi">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label">Phone Number *</label>
-              <input type="tel" name="phone_number" class="form-control" required />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Alternate Phone</label>
-              <input type="tel" name="alt_phone_number" class="form-control" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Email Address</label>
-              <input type="email" name="email" class="form-control" />
-            </div>
-            <div class="col-12">
-              <label class="form-label">Home Address</label>
-              <textarea name="address" class="form-control" rows="2"></textarea>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">City</label>
-              <input type="text" name="city" class="form-control" />
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">State</label>
-              <input type="text" name="state" class="form-control" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Medical Information -->
-    <div class="col-md-6">
-      <div class="card-abi h-100">
-        <div class="card-header-abi"><h2>Medical Information</h2></div>
-        <div class="card-body-abi">
-          <div class="row g-3">
-            <div class="col-6">
-              <label class="form-label">Blood Group</label>
-              <select name="blood_group" class="form-select">
-                <option value="">Unknown</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Genotype</label>
-              <select name="genotype" class="form-select">
-                <option value="">Unknown</option>
-                <option value="AA">AA</option>
-                <option value="AS">AS</option>
-                <option value="SS">SS</option>
-                <option value="SC">SC</option>
-                <option value="AC">AC</option>
-              </select>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Known Allergies</label>
-              <textarea name="allergies" class="form-control" rows="2" placeholder="e.g. Penicillin, Aspirin"></textarea>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Chronic Conditions</label>
-              <textarea name="chronic_conditions" class="form-control" rows="2" placeholder="e.g. Hypertension, Diabetes Type 2"></textarea>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Assigned Doctor</label>
-              <select name="assigned_doctor" class="form-select">
-                <option value="">— Unassigned —</option>
-                {% for doc in doctors %}
-                <option value="{{ doc.id }}">Dr. {{ doc.get_full_name }} ({{ doc.department|default:"General" }})</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Next of Kin -->
-    <div class="col-md-6">
-      <div class="card-abi h-100">
-        <div class="card-header-abi"><h2>Next of Kin</h2></div>
-        <div class="card-body-abi">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Full Name</label>
-              <input type="text" name="nok_name" class="form-control" />
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Relationship</label>
-              <input type="text" name="nok_relationship" class="form-control" placeholder="e.g. Spouse, Parent" />
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Phone Number</label>
-              <input type="tel" name="nok_phone" class="form-control" />
-            </div>
-            <div class="col-12">
-              <label class="form-label">Address</label>
-              <textarea name="nok_address" class="form-control" rows="4"></textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Submit -->
-    <div class="col-12">
-      <div style="display:flex;gap:12px;justify-content:flex-end;">
-        <a href="{% url 'patient_detail:list' %}" class="btn-abi-outline">Cancel</a>
-        <button type="submit" class="btn-abi-primary">
-          <i class="fas fa-user-plus"></i> Register Patient
-        </button>
-      </div>
-    </div>
-
+<!-- SECTION 1: CORE IDENTITY -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi" style="background:linear-gradient(135deg,var(--primary),#074266);">
+    <i class="fas fa-user" style="color:#fff;"></i><h2 style="color:#fff;">1. Personal Identity</h2>
   </div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-3"><label class="form-label">First Name <span style="color:#E53E3E;">*</span></label>
+      <input type="text" name="first_name" class="form-control" required placeholder="First name" /></div>
+    <div class="col-md-3"><label class="form-label">Middle Name</label>
+      <input type="text" name="middle_name" class="form-control" placeholder="Optional" /></div>
+    <div class="col-md-3"><label class="form-label">Last Name / Surname <span style="color:#E53E3E;">*</span></label>
+      <input type="text" name="last_name" class="form-control" required placeholder="Surname" /></div>
+    <div class="col-md-3"><label class="form-label">Preferred Name</label>
+      <input type="text" name="preferred_name" class="form-control" placeholder="Nickname (optional)" /></div>
+    <div class="col-md-3"><label class="form-label">Date of Birth <span style="color:#E53E3E;">*</span></label>
+      <input type="date" name="date_of_birth" class="form-control" required /></div>
+    <div class="col-md-3"><label class="form-label">Gender <span style="color:#E53E3E;">*</span></label>
+      <select name="gender" class="form-select" required>
+        <option value="">— Select —</option>
+        <option value="M">Male</option><option value="F">Female</option>
+        <option value="O">Other / Prefer not to say</option>
+      </select></div>
+    <div class="col-md-3"><label class="form-label">Marital Status</label>
+      <select name="marital_status" class="form-select">
+        <option value="">— Select —</option>
+        <option value="single">Single</option><option value="married">Married</option>
+        <option value="divorced">Divorced</option><option value="widowed">Widowed</option>
+        <option value="separated">Separated</option>
+      </select></div>
+    <div class="col-md-3"><label class="form-label">Religion</label>
+      <select name="religion" class="form-select">
+        <option value="">— Select —</option>
+        <option value="christianity">Christianity</option><option value="islam">Islam</option>
+        <option value="traditional">Traditional</option><option value="other">Other</option>
+        <option value="none">None</option>
+      </select></div>
+    <div class="col-md-4"><label class="form-label">Occupation</label>
+      <input type="text" name="occupation" class="form-control" placeholder="e.g. Teacher, Trader" /></div>
+    <div class="col-md-4"><label class="form-label">Primary Language</label>
+      <input type="text" name="primary_language" class="form-control" placeholder="e.g. Yoruba, English" /></div>
+    <div class="col-md-4"><label class="form-label">Patient Photo</label>
+      <input type="file" name="photo" class="form-control" accept="image/*" /></div>
+  </div></div>
+</div>
+
+<!-- SECTION 2: CONTACT -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi"><i class="fas fa-phone" style="color:var(--primary);"></i><h2>2. Contact Information</h2></div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-4"><label class="form-label">Phone Number <span style="color:#E53E3E;">*</span></label>
+      <input type="tel" name="phone_number" class="form-control" required placeholder="08012345678" /></div>
+    <div class="col-md-4"><label class="form-label">Alternative Phone</label>
+      <input type="tel" name="alt_phone_number" class="form-control" /></div>
+    <div class="col-md-4"><label class="form-label">Email Address</label>
+      <input type="email" name="email" class="form-control" /></div>
+    <div class="col-12"><label class="form-label">Current Address</label>
+      <textarea name="address" class="form-control" rows="2" placeholder="House number, street, area..."></textarea></div>
+    <div class="col-md-3"><label class="form-label">City</label><input type="text" name="city" class="form-control" /></div>
+    <div class="col-md-3"><label class="form-label">State</label><input type="text" name="state" class="form-control" placeholder="e.g. Lagos" /></div>
+    <div class="col-md-3"><label class="form-label">LGA</label><input type="text" name="lga" class="form-control" /></div>
+    <div class="col-md-3"><label class="form-label">Hometown / Village</label><input type="text" name="hometown" class="form-control" /></div>
+  </div></div>
+</div>
+
+<!-- SECTION 3: ORIGIN -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi"><i class="fas fa-map-marker-alt" style="color:var(--primary);"></i><h2>3. Origin & Nationality</h2></div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-4"><label class="form-label">State of Origin</label>
+      <input type="text" name="state_of_origin" class="form-control" placeholder="e.g. Oyo, Kano" /></div>
+    <div class="col-md-4"><label class="form-label">Nationality</label>
+      <input type="text" name="nationality" class="form-control" value="Nigerian" /></div>
+    <div class="col-md-4"><label class="form-label">Disabilities / Special Needs</label>
+      <input type="text" name="disabilities" class="form-control" placeholder="If any" /></div>
+  </div></div>
+</div>
+
+<!-- SECTION 4: MEDICAL -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi"><i class="fas fa-heartbeat" style="color:#E53E3E;"></i>
+    <h2>4. Medical Information</h2><span style="margin-left:auto;font-size:12px;color:var(--text-muted);">All optional</span></div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-3"><label class="form-label">Blood Group</label>
+      <select name="blood_group" class="form-select">
+        <option value="">— Unknown —</option>
+        <option value="A+">A+</option><option value="A-">A-</option>
+        <option value="B+">B+</option><option value="B-">B-</option>
+        <option value="AB+">AB+</option><option value="AB-">AB-</option>
+        <option value="O+">O+</option><option value="O-">O-</option>
+      </select></div>
+    <div class="col-md-3"><label class="form-label">Genotype</label>
+      <select name="genotype" class="form-select">
+        <option value="">— Unknown —</option>
+        <option value="AA">AA</option><option value="AS">AS</option>
+        <option value="SS">SS</option><option value="SC">SC</option><option value="AC">AC</option>
+      </select></div>
+    <div class="col-md-3"><label class="form-label">Assign Doctor</label>
+      <select name="assigned_doctor" class="form-select">
+        <option value="">— None yet —</option>
+        {% for doc in doctors %}<option value="{{ doc.pk }}">Dr. {{ doc.get_full_name }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-3"><label class="form-label">Ward (if admitted)</label>
+      <input type="text" name="ward" class="form-control" /></div>
+    <div class="col-md-6"><label class="form-label">Known Allergies</label>
+      <textarea name="allergies" class="form-control" rows="2" placeholder="Drug/food/environmental allergies..."></textarea></div>
+    <div class="col-md-6"><label class="form-label">Chronic Conditions / Past Medical History</label>
+      <textarea name="chronic_conditions" class="form-control" rows="2" placeholder="Hypertension, Diabetes, Asthma..."></textarea></div>
+  </div></div>
+</div>
+
+<!-- SECTION 5: INSURANCE -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi"><i class="fas fa-shield-alt" style="color:var(--accent);"></i>
+    <h2>5. Insurance / HMO</h2><span style="margin-left:auto;font-size:12px;color:var(--text-muted);">Optional</span></div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-3"><label class="form-label">Insurance Provider</label><input type="text" name="insurance_provider" class="form-control" /></div>
+    <div class="col-md-3"><label class="form-label">Insurance Number</label><input type="text" name="insurance_number" class="form-control" /></div>
+    <div class="col-md-3"><label class="form-label">NHIS Number</label><input type="text" name="nhis_number" class="form-control" /></div>
+    <div class="col-md-3"><label class="form-label">HMO Name</label><input type="text" name="hmo_name" class="form-control" /></div>
+  </div></div>
+</div>
+
+<!-- SECTION 6: NEXT OF KIN -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi"><i class="fas fa-user-friends" style="color:var(--primary);"></i><h2>6. Next of Kin</h2></div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-4"><label class="form-label">Full Name</label><input type="text" name="nok_name" class="form-control" /></div>
+    <div class="col-md-4"><label class="form-label">Relationship</label>
+      <select name="nok_relationship" class="form-select">
+        <option value="">— Select —</option>
+        <option value="father">Father</option><option value="mother">Mother</option>
+        <option value="spouse">Spouse</option><option value="sibling">Sibling</option>
+        <option value="child">Child</option><option value="guardian">Guardian</option>
+        <option value="friend">Friend</option><option value="other">Other</option>
+      </select></div>
+    <div class="col-md-4"><label class="form-label">Phone</label><input type="tel" name="nok_phone" class="form-control" /></div>
+    <div class="col-md-4"><label class="form-label">Alt. Phone</label><input type="tel" name="nok_alt_phone" class="form-control" /></div>
+    <div class="col-md-4"><label class="form-label">Email</label><input type="email" name="nok_email" class="form-control" /></div>
+    <div class="col-md-4"><label class="form-label">Occupation</label><input type="text" name="nok_occupation" class="form-control" /></div>
+    <div class="col-12"><label class="form-label">Address</label>
+      <textarea name="nok_address" class="form-control" rows="2"></textarea></div>
+  </div></div>
+</div>
+
+<!-- SECTION 7: PREVIOUS RECORDS -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi"><i class="fas fa-id-card" style="color:var(--text-muted);"></i>
+    <h2>7. Previous Records</h2></div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-6"><label class="form-label">Old / Previous Hospital Number</label>
+      <input type="text" name="legacy_hospital_number" class="form-control"
+             placeholder="From previous system (optional)" />
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">A new ABI number is auto-generated. Both will be stored.</div>
+    </div>
+  </div></div>
+</div>
+
+<div style="display:flex;gap:12px;justify-content:flex-end;padding-bottom:40px;">
+  <a href="{% url 'patient_detail:list' %}" class="btn-abi-outline">Cancel</a>
+  <button type="submit" class="btn-abi-primary" style="padding:12px 32px;font-size:16px;">
+    <i class="fas fa-user-plus"></i> Register Patient
+  </button>
+</div>
 </form>
 {% endblock %}

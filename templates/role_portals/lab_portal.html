@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div style="background:linear-gradient(135deg,#1A365D,#3182CE);border-radius:14px;padding:24px;color:#fff;margin-bottom:24px;">
+  <div style="font-size:13px;opacity:.7;">Laboratory Portal</div>
+  <div style="font-size:26px;font-weight:800;">{{ request.user.get_full_name|default:request.user.username }}</div>
+</div>
+<div class="card-abi">
+  <div class="card-header-abi"><i class="fas fa-flask" style="color:#3182CE;"></i><h2>Pending Lab Results ({{ pending.count }})</h2></div>
+  <div class="card-body-abi" style="padding:0;">
+    {% for result in pending %}
+    <a href="{% url 'lab_results:fill' result.pk %}"
+       style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;">
+      <div style="flex:1;">
+        <div style="font-weight:600;">{{ result.patient.full_name }}</div>
+        <div style="font-size:13px;color:var(--text-muted);">{{ result.template.name|default:"Lab Test" }} · {{ result.ordered_at|date:"M d, Y" }}</div>
+      </div>
+      <span class="badge-abi badge-warning">{{ result.get_status_display }}</span>
+      <i class="fas fa-chevron-right" style="color:var(--text-muted);font-size:12px;"></i>
+    </a>
+    {% empty %}
+    <div style="padding:48px;text-align:center;color:var(--text-muted);">No pending lab results.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

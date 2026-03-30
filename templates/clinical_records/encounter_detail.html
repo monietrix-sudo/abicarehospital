@@ -1,0 +1,322 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>{{ encounter.get_encounter_type_display }}</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'clinical_records:patient_records' encounter.patient.hospital_number %}">Records</a>
+      › {{ encounter.encounter_date|date:"M d, Y" }}
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    {% if user.role == 'doctor' or user.is_admin_staff %}
+    <a href="{% url 'clinical_records:edit_encounter' encounter.pk %}" class="btn-abi-outline">
+      <i class="fas fa-edit"></i> Edit
+    </a>
+    {% endif %}
+    <a href="{% url 'clinical_records:patient_records' encounter.patient.hospital_number %}" class="btn-abi-outline">
+      <i class="fas fa-arrow-left"></i> All Records
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- LEFT: Encounter details -->
+  <div class="col-lg-8">
+
+    <!-- Main encounter card -->
+    <div class="card-abi mb-4"
+         style="border-left:4px solid {% if encounter.encounter_type == 'inpatient' %}var(--primary){% elif encounter.encounter_type == 'emergency' %}#E53E3E{% else %}var(--accent){% endif %};">
+      <div class="card-body-abi">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:20px;">
+
+          <div><div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Date</div>
+            <div style="font-weight:700;">{{ encounter.encounter_date|date:"D, M d Y" }}</div></div>
+
+          {% if encounter.encounter_type == 'inpatient' %}
+          <div><div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Ward</div>
+            <div style="font-weight:700;">{{ encounter.get_ward_admitted_display|default:"—" }}</div></div>
+
+          <div><div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Bed</div>
+            <div style="font-weight:700;">{{ encounter.bed_number|default:"—" }}</div></div>
+
+          <div><div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Discharge</div>
+            <div style="font-weight:700;">{{ encounter.discharge_date|date:"M d Y"|default:"Still admitted" }}</div></div>
+
+          <div><div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Length of Stay</div>
+            <div style="font-weight:700;">{{ encounter.length_of_stay|default:"—" }}{% if encounter.length_of_stay %} day{{ encounter.length_of_stay|pluralize }}{% endif %}</div></div>
+          {% endif %}
+
+          <div><div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Consultant</div>
+            <div style="font-weight:700;">{{ encounter.consultant_display }}</div></div>
+
+          {% if encounter.billing_code %}
+          <div><div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Billing Code</div>
+            <div style="font-weight:700;font-family:monospace;">{{ encounter.billing_code }}</div></div>
+          {% endif %}
+
+          <div><div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Status</div>
+            <span class="badge-abi {% if encounter.status == 'active' %}badge-danger{% elif encounter.status == 'discharged' %}badge-success{% else %}badge-muted{% endif %}">
+              {{ encounter.get_status_display }}</span></div>
+
+        </div>
+
+        {% for label, field in forloop.parentloop|dictsort %}{% endfor %}
+
+        {% if encounter.presenting_complaint %}
+        <div class="mb-3"><div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Presenting Complaint</div>
+          <div style="font-size:14px;line-height:1.6;">{{ encounter.presenting_complaint }}</div></div>
+        {% endif %}
+
+        {% if encounter.history_of_illness %}
+        <div class="mb-3"><div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">History of Presenting Illness</div>
+          <div style="font-size:14px;line-height:1.6;white-space:pre-wrap;">{{ encounter.history_of_illness }}</div></div>
+        {% endif %}
+
+        {% if encounter.examination_findings %}
+        <div class="mb-3"><div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Examination Findings</div>
+          <div style="font-size:14px;line-height:1.6;white-space:pre-wrap;">{{ encounter.examination_findings }}</div></div>
+        {% endif %}
+
+        {% if encounter.treatment_plan %}
+        <div class="mb-3"><div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Treatment Plan</div>
+          <div style="font-size:14px;line-height:1.6;white-space:pre-wrap;">{{ encounter.treatment_plan }}</div></div>
+        {% endif %}
+
+        {% if encounter.doctors_report %}
+        <div class="mb-3"><div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Doctor's Report</div>
+          <div style="font-size:14px;line-height:1.6;white-space:pre-wrap;">{{ encounter.doctors_report }}</div></div>
+        {% endif %}
+
+        {% if encounter.discharge_summary %}
+        <div><div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Discharge Summary</div>
+          <div style="font-size:14px;line-height:1.6;white-space:pre-wrap;background:#F0FFF4;padding:12px;border-radius:8px;">{{ encounter.discharge_summary }}</div></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Diagnoses -->
+    <div class="card-abi mb-4">
+      <div class="card-header-abi">
+        <i class="fas fa-diagnoses" style="color:var(--primary);"></i>
+        <h2>Diagnoses ({{ diagnoses.count }})</h2>
+      </div>
+      <div class="card-body-abi">
+        {% for diag in diagnoses %}
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+          <span class="badge-abi badge-primary" style="flex-shrink:0;">{{ diag.get_diagnosis_type_display }}</span>
+          <div style="flex:1;">
+            {% if diag.diagnosis_code %}
+            <span style="font-family:monospace;color:var(--primary);font-weight:700;font-size:13px;">[{{ diag.diagnosis_code }}]</span>
+            {% endif %}
+            <strong>{{ diag.diagnosis_name }}</strong>
+            {% if diag.notes %}<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">{{ diag.notes }}</div>{% endif %}
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+              {{ diag.diagnosis_date|date:"M d, Y" }}
+              {% if diag.diagnosed_by %} · Dr. {{ diag.diagnosed_by.get_full_name }}{% endif %}
+            </div>
+          </div>
+          {% if user.role == 'doctor' or user.is_admin_staff %}
+          <form method="post" action="{% url 'clinical_records:delete_diagnosis' diag.pk %}">
+            {% csrf_token %}
+            <button type="submit" style="background:none;border:none;color:#E53E3E;cursor:pointer;font-size:13px;"
+                    onclick="return confirm('Remove this diagnosis?')"><i class="fas fa-trash"></i></button>
+          </form>
+          {% endif %}
+        </div>
+        {% empty %}
+        <div style="color:var(--text-muted);font-size:14px;padding:8px 0;">No diagnoses recorded yet.</div>
+        {% endfor %}
+
+        {% if user.role == 'doctor' or user.is_admin_staff %}
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div style="font-weight:600;font-size:14px;margin-bottom:12px;color:var(--primary);">
+            <i class="fas fa-plus"></i> Add Diagnosis
+          </div>
+          <form method="post" action="{% url 'clinical_records:add_diagnosis' encounter.pk %}" class="form-abi">
+            {% csrf_token %}
+            <div class="row g-2">
+              <div class="col-md-3">
+                <input type="date" name="diagnosis_date" class="form-control" value="{{ today|date:'Y-m-d' }}" />
+              </div>
+              <div class="col-md-3">
+                <select name="diagnosis_type" class="form-select">
+                  {% for val, label in diag_types %}
+                  <option value="{{ val }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-2">
+                <input type="text" name="diagnosis_code" class="form-control" placeholder="ICD-10 Code" />
+              </div>
+              <div class="col-md-4">
+                <input type="text" name="diagnosis_name" class="form-control" required placeholder="Diagnosis name *" />
+              </div>
+              <div class="col-12">
+                <textarea name="notes" class="form-control" rows="2" placeholder="Doctor's notes (optional)"></textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn-abi-primary" style="padding:8px 20px;font-size:13px;">
+                  <i class="fas fa-plus"></i> Add Diagnosis
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Operations -->
+    <div class="card-abi mb-4">
+      <div class="card-header-abi">
+        <i class="fas fa-procedures" style="color:#E53E3E;"></i>
+        <h2>Operations / Procedures ({{ operations.count }})</h2>
+      </div>
+      <div class="card-body-abi">
+        {% for op in operations %}
+        <div style="padding:14px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span class="badge-abi badge-danger">{{ op.get_operation_type_display }}</span>
+            <strong style="font-size:15px;">{{ op.operation_name }}</strong>
+            {% if op.operation_code %}<span style="font-family:monospace;font-size:12px;color:var(--text-muted);">[{{ op.operation_code }}]</span>{% endif %}
+            <span style="margin-left:auto;font-size:12px;color:var(--text-muted);">{{ op.operation_date|date:"M d, Y" }}</span>
+          </div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;color:var(--text-muted);">
+            {% if op.surgeon %}<span>Surgeon: Dr. {{ op.surgeon.get_full_name }}</span>{% endif %}
+            {% if op.surgeon_text %}<span>Surgeon: {{ op.surgeon_text }}</span>{% endif %}
+            {% if op.anaesthesia_type %}<span>Anaesthesia: {{ op.anaesthesia_type }}</span>{% endif %}
+            {% if op.duration_minutes %}<span>Duration: {{ op.duration_minutes }} min</span>{% endif %}
+            <span>Outcome: {{ op.get_outcome_display }}</span>
+          </div>
+          {% if op.notes %}<div style="margin-top:6px;font-size:13px;">{{ op.notes }}</div>{% endif %}
+          {% if op.doctors_remark %}<div style="margin-top:6px;font-size:13px;font-style:italic;color:var(--text-muted);">Remark: {{ op.doctors_remark }}</div>{% endif %}
+          {% if op.complications %}<div style="margin-top:6px;font-size:13px;color:#E53E3E;"><strong>Complications:</strong> {{ op.complications }}</div>{% endif %}
+        </div>
+        {% empty %}
+        <div style="color:var(--text-muted);font-size:14px;padding:8px 0;">No operations recorded.</div>
+        {% endfor %}
+
+        {% if user.role == 'doctor' or user.is_admin_staff %}
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div style="font-weight:600;font-size:14px;margin-bottom:12px;color:#E53E3E;">
+            <i class="fas fa-plus"></i> Add Operation / Procedure
+          </div>
+          <form method="post" action="{% url 'clinical_records:add_operation' encounter.pk %}" class="form-abi">
+            {% csrf_token %}
+            <div class="row g-2">
+              <div class="col-md-3"><input type="date" name="operation_date" class="form-control" value="{{ today|date:'Y-m-d' }}" /></div>
+              <div class="col-md-3">
+                <select name="operation_type" class="form-select">
+                  {% for val, label in op_types %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-md-3"><input type="text" name="operation_code" class="form-control" placeholder="CPT Code (optional)" /></div>
+              <div class="col-md-3">
+                <select name="outcome" class="form-select">
+                  <option value="successful">Successful</option>
+                  <option value="complicated">Complicated</option>
+                  <option value="failed">Failed</option>
+                  <option value="pending">Pending/Scheduled</option>
+                </select>
+              </div>
+              <div class="col-12"><input type="text" name="operation_name" class="form-control" required placeholder="Operation / procedure name *" /></div>
+              <div class="col-md-4"><input type="text" name="anaesthesia_type" class="form-control" placeholder="Anaesthesia type" /></div>
+              <div class="col-md-4"><input type="number" name="duration_minutes" class="form-control" placeholder="Duration (minutes)" /></div>
+              <div class="col-md-4"><input type="text" name="surgeon_text" class="form-control" placeholder="Surgeon name" /></div>
+              <div class="col-md-6"><textarea name="notes" class="form-control" rows="2" placeholder="Operation notes"></textarea></div>
+              <div class="col-md-6"><textarea name="doctors_remark" class="form-control" rows="2" placeholder="Doctor's remark"></textarea></div>
+              <div class="col-12"><textarea name="complications" class="form-control" rows="2" placeholder="Complications (if any)"></textarea></div>
+              <div class="col-12">
+                <button type="submit" style="background:linear-gradient(135deg,#E53E3E,#C53030);color:#fff;border:none;border-radius:10px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;">
+                  <i class="fas fa-plus"></i> Add Operation
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Sidebar actions -->
+  <div class="col-lg-4">
+    <div class="card-abi mb-3">
+      <div class="card-header-abi"><h2>Patient</h2></div>
+      <div class="card-body-abi">
+        <div style="font-weight:700;">{{ encounter.patient.full_name }}</div>
+        <div style="font-size:13px;color:var(--text-muted);">{{ encounter.patient.hospital_number }}</div>
+        {% if encounter.patient.age %}<div style="font-size:13px;color:var(--text-muted);">Age: {{ encounter.patient.age }}</div>{% endif %}
+        {% if encounter.patient.blood_group %}<div style="font-size:13px;color:var(--text-muted);">Blood Group: {{ encounter.patient.blood_group }}</div>{% endif %}
+        {% if encounter.patient.allergies %}
+        <div style="margin-top:8px;padding:8px;background:#FFF5F5;border-radius:6px;font-size:12px;color:#E53E3E;">
+          <i class="fas fa-exclamation-triangle"></i> <strong>Allergies:</strong> {{ encounter.patient.allergies }}
+        </div>
+        {% endif %}
+        <a href="{% url 'patient_detail:detail' encounter.patient.hospital_number %}" class="btn-abi-outline mt-3" style="width:100%;justify-content:center;display:flex;">
+          <i class="fas fa-user"></i> Full Profile
+        </a>
+      </div>
+    </div>
+
+    <!-- Patient portal approval -->
+    {% if user.role == 'doctor' or user.is_admin_staff %}
+    <div class="card-abi mb-3">
+      <div class="card-header-abi"><i class="fas fa-eye" style="color:var(--accent);"></i><h2>Patient Visibility</h2></div>
+      <div class="card-body-abi">
+        {% if encounter.approved_for_patient %}
+        <div style="background:#F0FFF4;border-radius:8px;padding:10px 14px;font-size:13px;color:#276749;margin-bottom:12px;">
+          <i class="fas fa-check-circle"></i> Visible in patient portal<br/>
+          <span style="font-size:11px;">Approved by {{ encounter.approved_by.get_full_name }} on {{ encounter.approved_at|date:"M d, Y" }}</span>
+        </div>
+        {% else %}
+        <div style="background:#F7FAFC;border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+          <i class="fas fa-eye-slash"></i> Hidden from patient portal
+        </div>
+        {% endif %}
+        <form method="post" action="{% url 'clinical_records:approve_patient' encounter.pk %}">
+          {% csrf_token %}
+          {% if encounter.approved_for_patient %}
+          <input type="hidden" name="action" value="revoke" />
+          <button type="submit" class="btn-abi-outline" style="width:100%;justify-content:center;">
+            <i class="fas fa-eye-slash"></i> Revoke Patient Access
+          </button>
+          {% else %}
+          <input type="hidden" name="action" value="approve" />
+          <button type="submit" class="btn-abi-primary" style="width:100%;justify-content:center;background:var(--accent);">
+            <i class="fas fa-eye"></i> Approve for Patient Portal
+          </button>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Create bill from this encounter -->
+    {% if user.role == 'doctor' or user.is_admin_staff %}
+    <div class="card-abi">
+      <div class="card-body-abi">
+        <a href="{% url 'billing:create' encounter.patient.hospital_number %}" class="btn-abi-primary" style="width:100%;justify-content:center;">
+          <i class="fas fa-file-invoice-dollar"></i> Create Bill for this Encounter
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const today = '{{ today|date:"Y-m-d" }}';
+document.querySelectorAll('input[type="date"]').forEach(el => {
+  if (!el.value) el.value = today;
+});
+</script>
+{% endblock %}

@@ -61,13 +61,18 @@ def _generate_temp_password(length=10):
 
 
 def _redirect_after_login(user):
-    """
-    Return the correct redirect URL based on the user's role.
-    Patients go to their portal. Staff go to the EHR dashboard.
-    """
-    if user.is_patient_user:
-        return '/portal/'
-    return '/dashboard/'
+    """Each role goes to their own portal on login."""
+    role_map = {
+        'patient':      '/portal/',
+        'doctor':       '/doctor-portal/',
+        'nurse':        '/nurse-portal/',
+        'lab_tech':     '/lab-portal/',
+        'receptionist': '/reception-portal/',
+        'admin':        '/dashboard/',
+    }
+    if user.is_superuser:
+        return '/dashboard/'
+    return role_map.get(user.role, '/dashboard/')
 
 
 # ─────────────────────────────────────────────────────────────────────

@@ -1,0 +1,66 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div style="background:linear-gradient(135deg,#276749,#00856A);border-radius:14px;padding:24px;color:#fff;margin-bottom:24px;">
+  <div style="font-size:13px;opacity:.7;">Nurse Portal</div>
+  <div style="font-size:26px;font-weight:800;">{{ request.user.get_full_name|default:request.user.username }}</div>
+  <div style="font-size:13px;opacity:.7;margin-top:4px;">{{ today|date:"l, F j, Y" }}</div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card-abi mb-4">
+      <div class="card-header-abi"><i class="fas fa-file-invoice-dollar" style="color:var(--accent);"></i>
+        <h2>Bills to Action ({{ bills_to_action.count }})</h2></div>
+      <div class="card-body-abi" style="padding:0;">
+        {% for bill in bills_to_action %}
+        <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="flex:1;">
+              <div style="font-weight:700;">{{ bill.patient.full_name }}</div>
+              <div style="font-size:12px;color:var(--text-muted);">₦{{ bill.total_amount|floatformat:2 }} · Balance: ₦{{ bill.balance|floatformat:2 }}</div>
+              <div style="font-size:11px;color:var(--text-muted);">From Dr. {{ bill.created_by.get_full_name|default:bill.created_by.username }}</div>
+            </div>
+            <span class="badge-abi {% if bill.status == 'sent_to_nurse' %}badge-warning{% elif bill.status == 'sent_to_patient' %}badge-blue{% else %}badge-success{% endif %}">
+              {{ bill.get_status_display }}</span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <a href="{% url 'billing:bill_detail' bill.pk %}" class="btn-abi-outline" style="padding:5px 12px;font-size:12px;">View Bill</a>
+            {% if bill.status == 'sent_to_nurse' %}
+            <form method="post" action="{% url 'billing:send_to_patient' bill.pk %}">{% csrf_token %}
+              <button type="submit" class="btn-abi-primary" style="padding:5px 12px;font-size:12px;background:var(--accent);">
+                <i class="fas fa-paper-plane"></i> Send to Patient
+              </button>
+            </form>
+            {% endif %}
+            {% if bill.status in 'sent_to_patient,partially_paid' %}
+            <a href="{% url 'billing:cash_payment' bill.pk %}" class="btn-abi-outline" style="padding:5px 12px;font-size:12px;color:var(--success);">
+              <i class="fas fa-money-bill"></i> Record Cash
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <div style="padding:32px;text-align:center;color:var(--text-muted);">No bills to action.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card-abi">
+      <div class="card-header-abi"><i class="fas fa-users-cog" style="color:var(--primary);"></i>
+        <h2>Today's Queue ({{ todays_queue.count }})</h2></div>
+      <div class="card-body-abi" style="padding:0;">
+        {% for entry in todays_queue %}
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);">
+          <div style="font-size:20px;font-weight:800;color:var(--primary);width:36px;text-align:center;">{{ entry.queue_number }}</div>
+          <div style="flex:1;"><div style="font-weight:600;">{{ entry.patient.full_name }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ entry.check_in_time|time:"g:i A" }}</div></div>
+          <span class="badge-abi {% if entry.status == 'waiting' %}badge-warning{% else %}badge-primary{% endif %}">{{ entry.get_status_display }}</span>
+        </div>
+        {% empty %}
+        <div style="padding:32px;text-align:center;color:var(--text-muted);">Queue is empty.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

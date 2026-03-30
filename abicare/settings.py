@@ -58,7 +58,7 @@ HOSPITAL_TAGLINE       = "Compassionate Care, Advanced Medicine"
 HOSPITAL_ADDRESS       = "123 Medical Drive, Lagos, Nigeria"
 HOSPITAL_PHONE         = "+234 800 000 0000"
 HOSPITAL_EMAIL         = "info@abicarehospital.com"
-HOSPITAL_LOGO          = "images/abicare-logop.png"
+HOSPITAL_LOGO          = "images/abicare-logop.jng"
 HOSPITAL_PRIMARY_COLOR = "#0A5C8A"
 HOSPITAL_ACCENT_COLOR  = "#00C49A"
 HOSPITAL_WEBSITE       = "https://abicarehospital.com"
@@ -89,6 +89,9 @@ INSTALLED_APPS = [
     'apps.portal',
     'apps.families',
     'apps.imports',
+    'apps.clinical_records',
+    'apps.billing',
+    'apps.role_portals',
 ]
 
 
@@ -322,7 +325,10 @@ JAZZMIN_UI_TWEAKS = {
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# settings.py
+
+# ── Paystack (Nigeria payments) ────────────────────────────────────────
+PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY', '')
+PAYSTACK_PUBLIC_KEY = env('PAYSTACK_PUBLIC_KEY', '')
 
 CSRF_TRUSTED_ORIGINS = [
     "https://abicarehospital-production.up.railway.app",

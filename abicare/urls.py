@@ -25,7 +25,10 @@ urlpatterns = [
     path('audit/',        include('apps.audit_logs.urls',   namespace='audit_logs')),
     path('notifications/',include('apps.notifications.urls',namespace='notifications')),
     path('queue/',        include('apps.queue.urls',        namespace='queue')),
-    path('portal/',       include('apps.portal.urls',       namespace='portal')),
+    path('portal/',         include('apps.portal.urls',        namespace='portal')),
+    path('clinical/',       include('apps.clinical_records.urls', namespace='clinical_records')),
+    path('billing/',        include('apps.billing.urls',        namespace='billing')),
+    path('',                include('apps.role_portals.urls',   namespace='role_portals')),
     path('families/',     include('apps.families.urls',     namespace='families')),
     path('imports/',      include('apps.imports.urls',      namespace='imports')),
 ]

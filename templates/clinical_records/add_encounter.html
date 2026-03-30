@@ -1,0 +1,187 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Add Clinical Record</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'clinical_records:patient_records' patient.hospital_number %}">Records</a> › Add
+    </div>
+  </div>
+  <a href="{% url 'clinical_records:patient_records' patient.hospital_number %}" class="btn-abi-outline">
+    <i class="fas fa-arrow-left"></i> Back
+  </a>
+</div>
+
+<!-- Patient banner -->
+<div style="background:#F7FAFC;border:1px solid var(--border);border-radius:10px;
+            padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;">
+  <div style="width:42px;height:42px;border-radius:50%;background:var(--primary);color:#fff;
+              display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;">
+    {{ patient.first_name|first }}{{ patient.last_name|first }}
+  </div>
+  <div>
+    <div style="font-weight:700;font-size:15px;">{{ patient.full_name }}</div>
+    <div style="font-size:13px;color:var(--text-muted);">
+      {{ patient.hospital_number }}
+      {% if patient.age %} · {{ patient.age }} yrs{% endif %}
+      {% if patient.blood_group %} · {{ patient.blood_group }}{% endif %}
+    </div>
+  </div>
+</div>
+
+<form method="post" class="form-abi">
+{% csrf_token %}
+
+<!-- Encounter type selection -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi"><i class="fas fa-stethoscope" style="color:var(--primary);"></i><h2>Record Type</h2></div>
+  <div class="card-body-abi">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px;" id="typeSelector">
+      {% for val, label in encounter_types %}
+      <label style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;
+                    border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:all .2s;"
+             class="enc-type-card" data-val="{{ val }}">
+        <input type="radio" name="encounter_type" value="{{ val }}" style="display:none;"
+               {% if val == 'outpatient' %}checked{% endif %} />
+        <i class="fas {% if val == 'inpatient' %}fa-bed{% elif val == 'emergency' %}fa-ambulance{% elif val == 'outpatient' %}fa-stethoscope{% elif val == 'day_case' %}fa-clock{% else %}fa-redo{% endif %}"
+           style="font-size:24px;"></i>
+        <span style="font-size:13px;font-weight:600;text-align:center;">{{ label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Date of Visit / Admission <span style="color:#E53E3E;">*</span></label>
+        <input type="date" name="encounter_date" class="form-control" required
+               value="{{ today|date:'Y-m-d' }}" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Billing / CPT Code</label>
+        <input type="text" name="billing_code" class="form-control" placeholder="e.g. 99213" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Referring Doctor / Facility</label>
+        <input type="text" name="referring_doctor" class="form-control" placeholder="If referred" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Inpatient fields (shown/hidden by JS) -->
+<div class="card-abi mb-4" id="inpatientFields" style="display:none;">
+  <div class="card-header-abi" style="background:#EBF4FF;">
+    <i class="fas fa-bed" style="color:var(--primary);"></i>
+    <h2>Inpatient / Admission Details</h2>
+  </div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">Ward Admitted</label>
+      <select name="ward_admitted" class="form-select">
+        <option value="">— Select Ward —</option>
+        {% for val, label in ward_choices %}
+        <option value="{{ val }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Bed Number</label>
+      <input type="text" name="bed_number" class="form-control" placeholder="e.g. B-12" />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Date of Discharge</label>
+      <input type="date" name="discharge_date" class="form-control" />
+    </div>
+    <div class="col-12">
+      <label class="form-label">Discharge Summary</label>
+      <textarea name="discharge_summary" class="form-control" rows="3"
+                placeholder="Summary of the admission and management at discharge..."></textarea>
+    </div>
+  </div></div>
+</div>
+
+<!-- Clinical Notes -->
+<div class="card-abi mb-4">
+  <div class="card-header-abi"><i class="fas fa-notes-medical" style="color:var(--accent);"></i><h2>Clinical Notes</h2></div>
+  <div class="card-body-abi"><div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Consultant / Doctor in Charge</label>
+      <select name="consultant_id" class="form-select">
+        <option value="">— Select Doctor —</option>
+        {% for doc in doctors %}
+        <option value="{{ doc.pk }}" {% if doc == request.user %}selected{% endif %}>
+          Dr. {{ doc.get_full_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Consultant (if not in system)</label>
+      <input type="text" name="consultant_name_text" class="form-control" placeholder="External consultant name" />
+    </div>
+    <div class="col-12">
+      <label class="form-label">Presenting Complaint / Reason for Visit</label>
+      <textarea name="presenting_complaint" class="form-control" rows="3"
+                placeholder="What the patient came in with..."></textarea>
+    </div>
+    <div class="col-12">
+      <label class="form-label">History of Presenting Illness</label>
+      <textarea name="history_of_illness" class="form-control" rows="4"
+                placeholder="Detailed history..."></textarea>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Examination Findings</label>
+      <textarea name="examination_findings" class="form-control" rows="4"
+                placeholder="Physical examination findings..."></textarea>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Treatment Plan / Management</label>
+      <textarea name="treatment_plan" class="form-control" rows="3"
+                placeholder="Investigations ordered, drugs prescribed, procedures planned..."></textarea>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Doctor's Report / Additional Notes</label>
+      <textarea name="doctors_report" class="form-control" rows="3"></textarea>
+    </div>
+  </div></div>
+</div>
+
+<div style="display:flex;gap:12px;justify-content:flex-end;padding-bottom:40px;">
+  <a href="{% url 'clinical_records:patient_records' patient.hospital_number %}" class="btn-abi-outline">Cancel</a>
+  <button type="submit" class="btn-abi-primary" style="padding:12px 28px;">
+    <i class="fas fa-save"></i> Save Record
+  </button>
+</div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const inpatientTypes = ['inpatient', 'emergency', 'day_case'];
+const cards = document.querySelectorAll('.enc-type-card');
+
+function updateSelected() {
+  const selected = document.querySelector('input[name="encounter_type"]:checked');
+  if (!selected) return;
+  const val = selected.value;
+  cards.forEach(c => {
+    const isSelected = c.dataset.val === val;
+    c.style.borderColor  = isSelected ? 'var(--primary)' : 'var(--border)';
+    c.style.background   = isSelected ? '#EBF4FF' : '#fff';
+    c.style.color        = isSelected ? 'var(--primary)' : 'var(--dark)';
+  });
+  document.getElementById('inpatientFields').style.display =
+    inpatientTypes.includes(val) ? 'block' : 'none';
+}
+
+cards.forEach(card => {
+  card.addEventListener('click', () => {
+    card.querySelector('input').checked = true;
+    updateSelected();
+  });
+});
+updateSelected();
+</script>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div style="background:linear-gradient(135deg,#2C5282,#0A5C8A);border-radius:14px;padding:24px;color:#fff;margin-bottom:24px;">
+  <div style="font-size:13px;opacity:.7;">Doctor Portal</div>
+  <div style="font-size:26px;font-weight:800;">Dr. {{ request.user.get_full_name|default:request.user.username }}</div>
+  <div style="font-size:13px;opacity:.7;margin-top:4px;">{{ request.user.department|default:"" }} · {{ today|date:"l, F j, Y" }}</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:24px;">
+  <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-hospital-user"></i></div>
+    <div><div class="stat-value">{{ patient_count }}</div><div class="stat-label">My Patients</div></div></div>
+  <div class="stat-card"><div class="stat-icon" style="background:#FFFBEB;color:#D69E2E;"><i class="fas fa-file-invoice-dollar"></i></div>
+    <div><div class="stat-value">{{ pending_bills.count }}</div><div class="stat-label">Pending Bills</div></div></div>
+  <div class="stat-card"><div class="stat-icon teal"><i class="fas fa-calendar-check"></i></div>
+    <div><div class="stat-value">{{ todays_appts.count }}</div><div class="stat-label">Today's Appointments</div></div></div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card-abi">
+      <div class="card-header-abi"><i class="fas fa-hospital-user" style="color:var(--primary);"></i><h2>My Patients</h2>
+        <a href="{% url 'patient_detail:list' %}" class="see-all" style="margin-left:auto;">See all →</a></div>
+      <div class="card-body-abi" style="padding:0;">
+        {% for patient in patients %}
+        <a href="{% url 'patient_detail:detail' patient.hospital_number %}"
+           style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">
+            {{ patient.first_name|first }}{{ patient.last_name|first }}</div>
+          <div style="flex:1;"><div style="font-weight:600;">{{ patient.full_name }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ patient.hospital_number }} · {{ patient.age }} yrs</div></div>
+          <a href="{% url 'clinical_records:patient_records' patient.hospital_number %}" class="btn-abi-outline" style="padding:4px 10px;font-size:11px;">Records</a>
+          <a href="{% url 'billing:create' patient.hospital_number %}" class="btn-abi-outline" style="padding:4px 10px;font-size:11px;color:var(--accent);">+ Bill</a>
+        </a>
+        {% empty %}
+        <div style="padding:32px;text-align:center;color:var(--text-muted);">No patients assigned yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card-abi mb-4">
+      <div class="card-header-abi"><i class="fas fa-file-invoice-dollar" style="color:#D69E2E;"></i><h2>Pending Bills (Draft)</h2></div>
+      <div class="card-body-abi" style="padding:0;">
+        {% for bill in pending_bills %}
+        <a href="{% url 'billing:bill_detail' bill.pk %}"
+           style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;">
+          <div style="flex:1;"><div style="font-weight:600;font-size:14px;">{{ bill.patient.full_name }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">₦{{ bill.total_amount|floatformat:2 }}</div></div>
+          <span class="badge-abi badge-warning">Draft</span>
+        </a>
+        {% empty %}
+        <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">No draft bills.</div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card-abi">
+      <div class="card-header-abi"><i class="fas fa-calendar-check" style="color:var(--accent);"></i><h2>Today's Appointments</h2></div>
+      <div class="card-body-abi" style="padding:0;">
+        {% for appt in todays_appts %}
+        <div style="padding:12px 20px;border-bottom:1px solid var(--border);">
+          <div style="font-weight:600;font-size:14px;">{{ appt.patient.full_name }}</div>
+          <div style="font-size:12px;color:var(--text-muted);">{{ appt.appointment_time|time:"g:i A" }} · {{ appt.get_appointment_type_display }}</div>
+        </div>
+        {% empty %}
+        <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">No appointments today.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
