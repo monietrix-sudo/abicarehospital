@@ -61,7 +61,7 @@ def portal_dashboard_view(request):
     # Released lab results (visible to patient)
     lab_results = LabResult.objects.filter(
         patient=patient, status='released'
-    ).order_by('-ordered_at')[:5]
+    ).order_by('-created_at')[:5]
 
     # Active medications
     active_meds = MedicationSchedule.objects.filter(
@@ -167,7 +167,7 @@ def portal_lab_results_view(request):
     results = LabResult.objects.filter(
         patient=patient,
         status='released',
-    ).order_by('-ordered_at')
+    ).order_by('-created_at')
 
     log_action(request.user, 'VIEW', request, "Patient viewed lab results")
     return render(request, 'portal/lab_results.html', {

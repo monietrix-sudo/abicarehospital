@@ -82,7 +82,7 @@
       <div class="item-icon" style="background:#E6FFFA;color:var(--accent);"><i class="fas fa-vials"></i></div>
       <div class="item-body">
         <div class="item-title">{{ result.template.name|default:"Lab Result" }}</div>
-        <div class="item-sub">{{ result.ordered_at|date:"M d, Y" }}</div>
+        <div class="item-sub">{{ result.created_at|date:"M d, Y" }}</div>
       </div>
       <a href="{% url 'portal:lab_result_detail' result.pk %}" class="btn-outline" style="padding:6px 12px;font-size:12px;">
         View

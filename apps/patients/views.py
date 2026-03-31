@@ -181,7 +181,7 @@ def patient_detail_view(request, hospital_number):
 
     lab_results = LabResult.objects.filter(
         patient=patient
-    ).select_related('template').order_by('-ordered_at')[:10]
+    ).select_related('template').order_by('-created_at')[:10]
 
     medications = MedicationSchedule.objects.filter(
         patient=patient, is_active=True
@@ -192,12 +192,19 @@ def patient_detail_view(request, hospital_number):
     ).select_related('doctor').order_by('-appointment_date')[:10]
 
     # Single aggregated count query instead of 4 separate .count() calls
+    # Uses actual related_names from each model's ForeignKey to Patient
     from django.db.models import Count, Q
     counts = Patient.objects.filter(pk=patient.pk).aggregate(
-        records_count=Count('medicalrecord', filter=Q(medicalrecord__is_deleted=False)),
-        lab_results_count=Count('labresult'),
-        medications_count=Count('medicationschedule', filter=Q(medicationschedule__is_active=True)),
-        appointments_count=Count('appointment'),
+        records_count=Count(
+            'medical_records',
+            filter=Q(medical_records__is_deleted=False)
+        ),
+        lab_results_count=Count('lab_results'),
+        medications_count=Count(
+            'medication_schedules',
+            filter=Q(medication_schedules__is_active=True)
+        ),
+        appointments_count=Count('appointments'),
     )
 
     log_action(request.user, 'VIEW', request,
