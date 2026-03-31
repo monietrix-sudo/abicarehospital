@@ -1,0 +1,287 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>OCR Scanning Setup Guide</h1>
+    <div class="breadcrumb-abi"><a href="{% url 'patients:dashboard' %}">Dashboard</a> › OCR Guide</div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+
+    <!-- What is OCR -->
+    <div class="card-abi mb-4">
+      <div class="card-header-abi">
+        <i class="fas fa-eye" style="color:var(--primary);font-size:18px;"></i>
+        <h2>What is OCR and How AbiCare Uses It</h2>
+      </div>
+      <div class="card-body-abi">
+        <p style="font-size:14px;line-height:1.7;">
+          OCR stands for <strong>Optical Character Recognition</strong>. It reads text from scanned images and PDFs
+          — the same way a human reads a printed page, but automatically.
+        </p>
+        <p style="font-size:14px;line-height:1.7;margin-top:10px;">
+          In AbiCare, you can upload a scanned patient document (e.g. a referral letter, old lab result, or
+          handwritten notes as a photo), click <strong>Extract Text with OCR</strong>, and the system reads
+          the text out of the image and saves it into the record body — making it searchable and readable without
+          opening the file.
+        </p>
+        <div style="background:#F0FFF4;border-left:4px solid var(--success);border-radius:8px;
+                    padding:12px 16px;margin-top:14px;font-size:13px;color:#276749;">
+          <i class="fas fa-check-circle"></i>
+          AbiCare uses <strong>Tesseract</strong> — a free, open-source OCR engine developed by Google.
+          It runs entirely on your server — no internet connection needed, no API fees, no data leaving your system.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: Install Tesseract -->
+    <div class="card-abi mb-4">
+      <div class="card-header-abi">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;
+                    display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">1</div>
+        <h2>Install Tesseract on Your Server</h2>
+      </div>
+      <div class="card-body-abi">
+        <p style="font-size:14px;margin-bottom:12px;">
+          Tesseract is the OCR engine. You need to install it at the system level — it is not a Python package.
+        </p>
+
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;
+                      letter-spacing:.05em;margin-bottom:6px;">Ubuntu / Debian / TrueHost VPS</div>
+          <div style="background:#1E2A38;border-radius:8px;padding:12px 16px;font-family:monospace;font-size:13px;color:#A8D8A8;">
+            sudo apt update<br/>
+            sudo apt install -y tesseract-ocr tesseract-ocr-eng<br/>
+            # For Yoruba / Hausa / Igbo (if scanning Nigerian documents):<br/>
+            sudo apt install -y tesseract-ocr-yor tesseract-ocr-hau
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;
+                      letter-spacing:.05em;margin-bottom:6px;">macOS</div>
+          <div style="background:#1E2A38;border-radius:8px;padding:12px 16px;font-family:monospace;font-size:13px;color:#A8D8A8;">
+            brew install tesseract
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;
+                      letter-spacing:.05em;margin-bottom:6px;">Windows</div>
+          <div style="font-size:13px;color:var(--text-muted);">
+            Download the installer from:
+            <a href="https://github.com/UB-Mannheim/tesseract/wiki" target="_blank"
+               style="color:var(--primary);font-weight:600;">
+              github.com/UB-Mannheim/tesseract/wiki
+            </a>
+            <br/>Install it, then note the install path (usually <code>C:\Program Files\Tesseract-OCR\tesseract.exe</code>).
+            Add this to your <code>.env</code> file:<br/>
+            <code style="background:#F7FAFC;padding:4px 8px;border-radius:4px;">
+              TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
+            </code>
+          </div>
+        </div>
+
+        <div style="background:#EBF4FF;border-radius:8px;padding:12px;font-size:13px;color:#1A365D;margin-top:14px;">
+          <i class="fas fa-info-circle"></i>
+          <strong>Verify installation:</strong> Open a terminal and run
+          <code style="background:#fff;padding:2px 6px;border-radius:4px;">tesseract --version</code>
+          If you see a version number, it is installed correctly.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Install Python packages -->
+    <div class="card-abi mb-4">
+      <div class="card-header-abi">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;
+                    display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">2</div>
+        <h2>Install Python Packages</h2>
+      </div>
+      <div class="card-body-abi">
+        <div style="background:#1E2A38;border-radius:8px;padding:12px 16px;font-family:monospace;font-size:13px;color:#A8D8A8;">
+          pip install pytesseract Pillow pdf2image
+        </div>
+        <div style="margin-top:12px;font-size:13px;color:var(--text-muted);">
+          <ul style="line-height:1.8;padding-left:20px;">
+            <li><strong>pytesseract</strong> — Python wrapper that calls Tesseract</li>
+            <li><strong>Pillow</strong> — reads image files (JPG, PNG, etc.)</li>
+            <li><strong>pdf2image</strong> — converts PDF pages to images before OCR</li>
+          </ul>
+        </div>
+
+        <div style="background:#FFFBEB;border-left:4px solid #D69E2E;border-radius:8px;
+                    padding:12px 16px;margin-top:12px;font-size:13px;color:#744210;">
+          <i class="fas fa-exclamation-triangle"></i>
+          <strong>pdf2image</strong> also needs <strong>poppler</strong> installed on the system for PDF support:<br/>
+          <code style="background:rgba(255,255,255,.5);padding:2px 6px;border-radius:4px;">
+            sudo apt install -y poppler-utils
+          </code>
+          (Ubuntu) or
+          <code style="background:rgba(255,255,255,.5);padding:2px 6px;border-radius:4px;">
+            brew install poppler
+          </code>
+          (macOS)
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: How to use OCR in AbiCare -->
+    <div class="card-abi mb-4">
+      <div class="card-header-abi">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;
+                    display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">3</div>
+        <h2>How to Use OCR in AbiCare — Step by Step</h2>
+      </div>
+      <div class="card-body-abi">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+
+          <div style="display:flex;gap:14px;align-items:flex-start;">
+            <div style="width:36px;height:36px;border-radius:50%;background:#EBF4FF;color:var(--primary);
+                        display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">1</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">Open a patient's Medical Records</div>
+              <div style="font-size:13px;color:var(--text-muted);">Go to any patient profile → Click <strong>Upload Record</strong> in the header buttons</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:14px;align-items:flex-start;">
+            <div style="width:36px;height:36px;border-radius:50%;background:#EBF4FF;color:var(--primary);
+                        display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">2</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">Upload a scanned document</div>
+              <div style="font-size:13px;color:var(--text-muted);">
+                Upload a scanned image (JPG/PNG) or a scanned PDF.
+                Supported: referral letters, old lab results, prescriptions, handwritten notes photographed clearly.
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:14px;align-items:flex-start;">
+            <div style="width:36px;height:36px;border-radius:50%;background:#EBF4FF;color:var(--primary);
+                        display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">3</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">Open the record and click Extract Text</div>
+              <div style="font-size:13px;color:var(--text-muted);">
+                Inside the record detail page, click the <strong>🔍 Extract Text with OCR</strong> button.
+                The system runs Tesseract on the file and fills the record body with the extracted text.
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:14px;align-items:flex-start;">
+            <div style="width:36px;height:36px;border-radius:50%;background:#EBF4FF;color:var(--primary);
+                        display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">4</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">Review and correct the extracted text</div>
+              <div style="font-size:13px;color:var(--text-muted);">
+                OCR is not perfect — especially with handwriting or low quality scans.
+                Click <strong>Edit Record</strong> to fix any misread words.
+                A version snapshot is automatically saved before OCR so you can always undo.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips for best results -->
+    <div class="card-abi mb-4">
+      <div class="card-header-abi">
+        <i class="fas fa-lightbulb" style="color:#D69E2E;"></i>
+        <h2>Tips for Best OCR Results</h2>
+      </div>
+      <div class="card-body-abi">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div style="background:#F0FFF4;border-radius:10px;padding:14px;font-size:13px;line-height:1.7;">
+              <div style="font-weight:700;color:var(--success);margin-bottom:8px;"><i class="fas fa-check"></i> What works well</div>
+              <ul style="padding-left:18px;margin:0;">
+                <li>Typed/printed documents (referral letters, lab forms)</li>
+                <li>Clear, high-resolution scans (300 DPI or above)</li>
+                <li>Good lighting if using a phone camera</li>
+                <li>Flat documents (no wrinkles, no shadows)</li>
+                <li>Black text on white background</li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div style="background:#FFF5F5;border-radius:10px;padding:14px;font-size:13px;line-height:1.7;">
+              <div style="font-weight:700;color:#E53E3E;margin-bottom:8px;"><i class="fas fa-times"></i> What works poorly</div>
+              <ul style="padding-left:18px;margin:0;">
+                <li>Handwritten notes (especially rushed doctor handwriting)</li>
+                <li>Very low resolution photos (blurry)</li>
+                <li>Documents photographed at an angle</li>
+                <li>Coloured paper or coloured text</li>
+                <li>Documents with heavy borders or logos obscuring text</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right sidebar: quick reference -->
+  <div class="col-lg-4">
+
+    <div class="card-abi mb-4" style="position:sticky;top:80px;">
+      <div class="card-header-abi"><i class="fas fa-terminal" style="color:var(--accent);"></i><h2>Quick Install (Copy &amp; Paste)</h2></div>
+      <div class="card-body-abi">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">
+          Run on your TrueHost VPS:
+        </div>
+        <div style="background:#1E2A38;border-radius:8px;padding:12px 14px;font-family:monospace;font-size:12px;color:#A8D8A8;line-height:1.8;">
+          sudo apt update<br/>
+          sudo apt install -y \<br/>
+          &nbsp;&nbsp;tesseract-ocr \<br/>
+          &nbsp;&nbsp;tesseract-ocr-eng \<br/>
+          &nbsp;&nbsp;poppler-utils<br/>
+          <br/>
+          pip install pytesseract \<br/>
+          &nbsp;&nbsp;Pillow \<br/>
+          &nbsp;&nbsp;pdf2image
+        </div>
+
+        <div style="margin-top:14px;font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">
+          Verify it works:
+        </div>
+        <div style="background:#1E2A38;border-radius:8px;padding:12px 14px;font-family:monospace;font-size:12px;color:#A8D8A8;">
+          tesseract --version<br/>
+          python -c "import pytesseract; print('OK')"
+        </div>
+
+        <div style="margin-top:14px;padding:12px;background:#F0FFF4;border-radius:8px;font-size:12px;color:#276749;">
+          <i class="fas fa-check-circle"></i>
+          After installing, restart the server:<br/>
+          <code>systemctl restart abicare</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-abi">
+      <div class="card-header-abi"><i class="fas fa-question-circle" style="color:var(--text-muted);"></i><h2>Supported File Types</h2></div>
+      <div class="card-body-abi" style="padding:0;">
+        {% for label, icon, supported in file_type_status %}
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);">
+          <i class="fas {{ icon }}" style="color:var(--text-muted);width:18px;"></i>
+          <span style="font-size:13px;flex:1;">{{ label }}</span>
+          {% if supported %}
+          <span class="badge-abi badge-success"><i class="fas fa-check"></i> Supported</span>
+          {% else %}
+          <span class="badge-abi badge-muted">Not supported</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

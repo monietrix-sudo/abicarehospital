@@ -422,3 +422,20 @@ def _run_ocr(record):
 
     else:
         raise ValueError(f"OCR is only supported for images and PDFs, not '{file_type}'.")
+
+
+@login_required
+def ocr_guide_view(request):
+    """Explains how to install and use OCR scanning in AbiCare."""
+    file_type_status = [
+        ('Scanned PDF (e.g. referral letter)',     'fa-file-pdf',   True),
+        ('Photo / Image (JPG, PNG)',               'fa-image',      True),
+        ('Typed Word document (.docx)',            'fa-file-word',  False),
+        ('Plain text file (.txt)',                 'fa-file-alt',   False),
+        ('Excel spreadsheet',                     'fa-file-excel', False),
+        ('Already-digital PDF (not scanned)',     'fa-file-pdf',   False),
+    ]
+    return render(request, 'records/ocr_guide.html', {
+        'page_title':       'OCR Scanning Setup Guide',
+        'file_type_status': file_type_status,
+    })

@@ -29,6 +29,10 @@ urlpatterns = [
          views.family_search_api,
          name='search_api'),
 
+    path('convert/<str:hospital_number>/',
+         views.convert_to_family_view,
+         name='convert_to_family'),
+
     path('api/patient-search/',
          views.patient_search_for_family_api,
          name='patient_search_api'),

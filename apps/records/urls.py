@@ -12,5 +12,6 @@ urlpatterns = [
     path('<int:pk>/share/',                     views.share_record_view,        name='share'),
     path('shared/<uuid:token>/',                views.shared_record_view,       name='shared'),
     path('share/<int:share_pk>/revoke/',        views.revoke_share_view,        name='revoke_share'),
+    path('ocr-guide/', views.ocr_guide_view, name='ocr_guide'),
     path('<int:pk>/ocr/',                        views.ocr_extract_view,         name='ocr'),
 ]

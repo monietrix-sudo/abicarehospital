@@ -91,60 +91,61 @@ def dashboard_view(request):
 def patient_list_view(request):
     """
     Patient list with search and filtering.
-    Supports quick search via name, hospital number, phone.
+    OPTIMISED: Uses .only() to fetch only columns shown in the list,
+    not the full row (avoids loading allergies, address, etc. for every patient).
     """
-    query = request.GET.get('q', '').strip()
-    gender_filter = request.GET.get('gender', '')
+    query              = request.GET.get('q', '').strip()
+    gender_filter      = request.GET.get('gender', '')
     blood_group_filter = request.GET.get('blood_group', '')
-    doctor_filter = request.GET.get('doctor', '')
+    doctor_filter      = request.GET.get('doctor', '')
 
-    # ── Base queryset ──────────────────────────────────────────────────────────
-    patients = Patient.objects.filter(is_active=True).select_related('assigned_doctor')
+    # Fetch only the columns displayed in the list — massive RAM/speed saving
+    patients = Patient.objects.filter(is_active=True).select_related(
+        'assigned_doctor'
+    ).only(
+        'patient_id', 'hospital_number', 'first_name', 'middle_name', 'last_name',
+        'date_of_birth', 'gender', 'phone_number', 'blood_group',
+        'created_at', 'has_pending_fields',
+        'assigned_doctor__first_name', 'assigned_doctor__last_name',
+    )
 
-    # Doctors see only their own patients; admin/superuser/others see all
     if request.user.is_doctor and not request.user.is_admin_staff:
         patients = patients.filter(assigned_doctor=request.user)
 
-    # ── Apply search ──────────────────────────────────────────────────────────
     if query:
         patients = patients.filter(
             Q(first_name__icontains=query) |
-            Q(last_name__icontains=query) |
-            Q(middle_name__icontains=query) |
+            Q(last_name__icontains=query)  |
+            Q(middle_name__icontains=query)|
             Q(hospital_number__icontains=query) |
-            Q(phone_number__icontains=query) |
+            Q(phone_number__icontains=query)    |
             Q(email__icontains=query)
         )
 
-    # ── Apply filters ─────────────────────────────────────────────────────────
-    if gender_filter:
-        patients = patients.filter(gender=gender_filter)
-    if blood_group_filter:
-        patients = patients.filter(blood_group=blood_group_filter)
-    if doctor_filter:
-        patients = patients.filter(assigned_doctor_id=doctor_filter)
+    if gender_filter:      patients = patients.filter(gender=gender_filter)
+    if blood_group_filter: patients = patients.filter(blood_group=blood_group_filter)
+    if doctor_filter:      patients = patients.filter(assigned_doctor_id=doctor_filter)
 
     total_results = patients.count()
 
-    # ── Pagination (20 per page) ───────────────────────────────────────────────
-    paginator = Paginator(patients.order_by('-created_at'), 20)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    paginator   = Paginator(patients.order_by('-created_at'), 20)
+    page_obj    = paginator.get_page(request.GET.get('page', 1))
+    doctors     = User.objects.filter(role='doctor', is_active=True).only(
+        'pk', 'first_name', 'last_name'
+    )
 
-    # Doctors for filter dropdown
-    doctors = User.objects.filter(role='doctor', is_active=True)
-
-    log_action(request.user, 'VIEW', request, f"Viewed patient list. Query: '{query}'")
+    log_action(request.user, 'VIEW', request,
+               f"Viewed patient list. Query: '{query}'")
 
     return render(request, 'patients/patient_list.html', {
-        'page_title': 'Patients',
-        'page_obj': page_obj,
-        'query': query,
-        'gender_filter': gender_filter,
+        'page_title':         'Patients',
+        'page_obj':           page_obj,
+        'query':              query,
+        'gender_filter':      gender_filter,
         'blood_group_filter': blood_group_filter,
-        'doctor_filter': doctor_filter,
-        'doctors': doctors,
-        'total_results': total_results,
+        'doctor_filter':      doctor_filter,
+        'doctors':            doctors,
+        'total_results':      total_results,
     })
 
 
@@ -152,39 +153,68 @@ def patient_list_view(request):
 def patient_detail_view(request, hospital_number):
     """
     Full patient profile: personal info, medical history, records, appointments.
-    Tabs: Overview | Records | Lab Results | Medications | Appointments
+    OPTIMISED: Uses select_related + prefetch_related to reduce DB queries.
+    Also fetches family memberships for the Convert to Family button.
     """
-    patient = get_object_or_404(Patient, hospital_number=hospital_number)
+    patient = get_object_or_404(
+        Patient.objects.select_related(
+            'assigned_doctor',
+            'registered_by',
+            'user_account',
+        ),
+        hospital_number=hospital_number
+    )
 
-    # Fetch related data for tabs
+    # Prefetch all family memberships in one query
+    family_memberships = patient.family_memberships.filter(
+        is_active=True
+    ).select_related('family').order_by('family__family_name')
+
     from apps.records.models import MedicalRecord
     from apps.lab_results.models import LabResult
     from apps.medications.models import MedicationSchedule
 
-    records      = MedicalRecord.objects.filter(patient=patient).order_by('-uploaded_at')[:10]
-    lab_results  = LabResult.objects.filter(patient=patient).order_by('-result_date')[:10]
-    medications  = MedicationSchedule.objects.filter(patient=patient, is_active=True)
-    appointments = Appointment.objects.filter(patient=patient).order_by('-appointment_date')[:10]
+    # All fetched in single queries with select_related to avoid N+1
+    records = MedicalRecord.objects.filter(
+        patient=patient, is_deleted=False
+    ).select_related('uploaded_by').order_by('-uploaded_at')[:10]
 
-    # Pass counts separately — sliced querysets have no .count() in templates
-    records_count      = MedicalRecord.objects.filter(patient=patient).count()
-    lab_results_count  = LabResult.objects.filter(patient=patient).count()
-    medications_count  = MedicationSchedule.objects.filter(patient=patient, is_active=True).count()
-    appointments_count = Appointment.objects.filter(patient=patient).count()
+    lab_results = LabResult.objects.filter(
+        patient=patient
+    ).select_related('template').order_by('-ordered_at')[:10]
 
-    log_action(request.user, 'VIEW', request, f"Viewed patient profile: {patient.hospital_number}")
+    medications = MedicationSchedule.objects.filter(
+        patient=patient, is_active=True
+    ).order_by('drug_name')
+
+    appointments = Appointment.objects.filter(
+        patient=patient
+    ).select_related('doctor').order_by('-appointment_date')[:10]
+
+    # Single aggregated count query instead of 4 separate .count() calls
+    from django.db.models import Count, Q
+    counts = Patient.objects.filter(pk=patient.pk).aggregate(
+        records_count=Count('medicalrecord', filter=Q(medicalrecord__is_deleted=False)),
+        lab_results_count=Count('labresult'),
+        medications_count=Count('medicationschedule', filter=Q(medicationschedule__is_active=True)),
+        appointments_count=Count('appointment'),
+    )
+
+    log_action(request.user, 'VIEW', request,
+               f"Viewed patient profile: {patient.hospital_number}")
 
     return render(request, 'patients/patient_detail.html', {
-        'page_title':        f"Patient: {patient.full_name}",
-        'patient':           patient,
-        'records':           records,
-        'lab_results':       lab_results,
-        'medications':       medications,
-        'appointments':      appointments,
-        'records_count':     records_count,
-        'lab_results_count': lab_results_count,
-        'medications_count': medications_count,
-        'appointments_count': appointments_count,
+        'page_title':         f"Patient: {patient.full_name}",
+        'patient':            patient,
+        'family_memberships': family_memberships,
+        'records':            records,
+        'lab_results':        lab_results,
+        'medications':        medications,
+        'appointments':       appointments,
+        'records_count':      counts['records_count'],
+        'lab_results_count':  counts['lab_results_count'],
+        'medications_count':  counts['medications_count'],
+        'appointments_count': counts['appointments_count'],
     })
 
 

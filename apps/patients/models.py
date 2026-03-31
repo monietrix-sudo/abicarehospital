@@ -180,3 +180,14 @@ class Patient(models.Model):
         verbose_name        = "Patient"
         verbose_name_plural = "Patients"
         ordering = ['-created_at']
+        indexes = [
+            # These are the fields searched most often — indexes make them fast
+            models.Index(fields=['hospital_number'],    name='idx_patient_hosp_num'),
+            models.Index(fields=['last_name'],          name='idx_patient_last_name'),
+            models.Index(fields=['phone_number'],       name='idx_patient_phone'),
+            models.Index(fields=['is_active'],          name='idx_patient_active'),
+            models.Index(fields=['assigned_doctor'],    name='idx_patient_doctor'),
+            models.Index(fields=['created_at'],         name='idx_patient_created'),
+            # Composite: active patients ordered by date (most common list query)
+            models.Index(fields=['is_active', '-created_at'], name='idx_patient_active_date'),
+        ]

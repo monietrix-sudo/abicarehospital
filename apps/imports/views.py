@@ -490,5 +490,4 @@ def download_template_view(request):
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="abicare_import_template.xlsx"'
     return response
-
 # Create your views here.

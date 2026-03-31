@@ -7,6 +7,7 @@ IMPORTANT PRIVACY RULE enforced in every view:
 - Each patient's health data is only accessible via their individual profile
 """
 
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -227,5 +228,83 @@ def patient_search_for_family_api(request):
         for p in patients
     ]
     return JsonResponse({'results': results})
+
+
+# ─────────────────────────────────────────────────────────────────────
+# CONVERT PATIENT TO FAMILY GROUP
+# ─────────────────────────────────────────────────────────────────────
+
+@login_required
+def convert_to_family_view(request, hospital_number):
+    """
+    A patient registered as a single record can be converted into a
+    Family Group. The patient becomes the Head of Family.
+    Additional family members can then be searched and linked.
+    The patient's individual records are NEVER affected — this is
+    purely an administrative grouping.
+    """
+    from apps.patients.models import Patient
+
+    patient = get_object_or_404(Patient, hospital_number=hospital_number, is_active=True)
+
+    # Check if already in a family as head
+    existing_head = FamilyMember.objects.filter(
+        patient=patient,
+        relationship='head',
+        is_active=True
+    ).first()
+
+    if existing_head:
+        messages.info(request,
+            f"{patient.full_name} is already the Head of "
+            f"<strong>{existing_head.family.family_name}</strong>. "
+            f"You can add more members to that group."
+        )
+        return redirect('families:detail', pk=existing_head.family.pk)
+
+    if request.method == 'POST':
+        # Family name — default to patient surname + Family
+        family_name = request.POST.get('family_name', '').strip()
+        if not family_name:
+            family_name = f"{patient.last_name} Family"
+
+        # Avoid duplicate family names
+        if FamilyGroup.objects.filter(family_name__iexact=family_name, is_active=True).exists():
+            # Append hospital number to make it unique
+            family_name = f"{family_name} ({patient.hospital_number})"
+
+        family = FamilyGroup.objects.create(
+            family_name=family_name,
+            address=patient.address,          # pre-fill from patient
+            created_by=request.user,
+            is_active=True,
+        )
+
+        # Add patient as head of the new family
+        FamilyMember.objects.create(
+            family=family,
+            patient=patient,
+            relationship='head',
+            added_by=request.user,
+            notes=f"Converted from single patient record on "
+                  f"{timezone.now().strftime('%d %b %Y')}",
+        )
+
+        log_action(request.user, 'CREATE', request,
+                   f"Converted patient {hospital_number} to family group: {family_name}")
+        messages.success(request,
+            f"Family group '{family_name}' created. "
+            f"{patient.full_name} is now Head of Family. "
+            f"You can add other family members below."
+        )
+        return redirect('families:detail', pk=family.pk)
+
+    # GET — show confirmation form
+    suggested_name = f"{patient.last_name} Family"
+    return render(request, 'families/convert_to_family.html', {
+        'page_title':     f"Convert to Family — {patient.full_name}",
+        'patient':        patient,
+        'suggested_name': suggested_name,
+    })
 
 # Create your views here.

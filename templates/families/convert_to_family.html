@@ -1,0 +1,108 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Convert to Family Group</h1>
+    <div class="breadcrumb-abi">
+      <a href="{% url 'patient_detail:detail' patient.hospital_number %}">{{ patient.full_name }}</a>
+      › Create Family Group
+    </div>
+  </div>
+  <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-outline">
+    <i class="fas fa-arrow-left"></i> Cancel
+  </a>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-7">
+
+    <!-- What this does -->
+    <div style="background:#EBF4FF;border:1px solid #BEE3F8;border-left:4px solid var(--primary);
+                border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+      <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:8px;">
+        <i class="fas fa-info-circle"></i> What this does
+      </div>
+      <ul style="font-size:13px;color:#1A365D;line-height:1.8;margin:0;padding-left:20px;">
+        <li>Creates a new <strong>Family Group</strong> named after this patient's family</li>
+        <li><strong>{{ patient.full_name }}</strong> becomes the <strong>Head of Family</strong></li>
+        <li>You can then search for and add other family members to the group</li>
+        <li>Each family member keeps their own <strong>individual health records</strong> — records are never merged or shared</li>
+        <li>The family group is for administrative linking only — health data stays private per person</li>
+      </ul>
+    </div>
+
+    <!-- Patient card -->
+    <div style="background:#F7FAFC;border:1px solid var(--border);border-radius:12px;
+                padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;">
+      {% if patient.photo %}
+      <img src="{{ patient.photo.url }}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;" />
+      {% else %}
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--primary);color:#fff;
+                  display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;">
+        {{ patient.first_name|first|upper }}{{ patient.last_name|first|upper }}
+      </div>
+      {% endif %}
+      <div>
+        <div style="font-weight:700;font-size:17px;">{{ patient.full_name }}</div>
+        <div style="font-size:13px;color:var(--text-muted);">
+          {{ patient.hospital_number }}
+          {% if patient.age %} · {{ patient.age }} yrs{% endif %}
+          {% if patient.phone_number %} · {{ patient.phone_number }}{% endif %}
+        </div>
+        <div style="margin-top:6px;">
+          <span class="badge-abi badge-primary">Will become Head of Family</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="card-abi">
+      <div class="card-header-abi">
+        <i class="fas fa-users" style="color:var(--primary);font-size:18px;"></i>
+        <h2>Name the Family Group</h2>
+      </div>
+      <div class="card-body-abi">
+        <form method="post" class="form-abi">
+          {% csrf_token %}
+          <div class="row g-3">
+
+            <div class="col-12">
+              <label class="form-label">Family Group Name *</label>
+              <input type="text" name="family_name" class="form-control"
+                     value="{{ suggested_name }}" required
+                     placeholder="e.g. Olusun Family, Adeyemi Family" />
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+                The suggested name is based on the patient's surname.
+                You can change it to anything that clearly identifies the family.
+              </div>
+            </div>
+
+            <div class="col-12" style="background:#FFFBEB;border-radius:10px;padding:14px 16px;">
+              <div style="font-size:13px;color:#744210;">
+                <i class="fas fa-crown" style="color:#D69E2E;"></i>
+                <strong>{{ patient.full_name }}</strong> will be set as
+                <strong>Head of Family</strong> automatically.
+                You can change their role or add a spouse, children, and parents
+                after the group is created.
+              </div>
+            </div>
+
+            <div class="col-12" style="display:flex;gap:12px;justify-content:flex-end;padding-top:8px;">
+              <a href="{% url 'patient_detail:detail' patient.hospital_number %}" class="btn-abi-outline">
+                Cancel
+              </a>
+              <button type="submit" class="btn-abi-primary" style="padding:11px 28px;">
+                <i class="fas fa-users"></i> Create Family Group
+              </button>
+            </div>
+
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
