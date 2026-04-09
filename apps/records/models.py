@@ -46,7 +46,7 @@ class MedicalRecord(models.Model):
 
     is_visible_to_patient  = models.BooleanField(default=False)
     is_downloadable        = models.BooleanField(
-        default=False 
+        default=False ,
         verbose_name="Allow file download",
         help_text=(
             "If ticked, authorised users can download the attached file. "
