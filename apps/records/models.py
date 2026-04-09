@@ -45,14 +45,14 @@ class MedicalRecord(models.Model):
     file_type     = models.CharField(max_length=20, blank=True)
 
     is_visible_to_patient  = models.BooleanField(default=False)
-    # is_downloadable        = models.BooleanField(
-    #     default=False 
-    #     verbose_name="Allow file download",
-    #     help_text=(
-    #         "If ticked, authorised users can download the attached file. "
-    #         "Admin and the uploading doctor can always download regardless of this setting."
-    #     )
-    # )
+    is_downloadable        = models.BooleanField(
+        default=False 
+        verbose_name="Allow file download",
+        help_text=(
+            "If ticked, authorised users can download the attached file. "
+            "Admin and the uploading doctor can always download regardless of this setting."
+        )
+    )
 
     # Soft delete
     is_deleted = models.BooleanField(default=False)
